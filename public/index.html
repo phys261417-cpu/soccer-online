@@ -17,7 +17,7 @@
       border-radius: 10px; margin-bottom: 8px; flex-wrap: wrap;
     }
     .scoreboard { font-size: 22px; font-weight: 800; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
-    #conn-status { font-size: 12px; padding: 3px 8px; border-radius: 99px; background: #dc2626; font-weight: bold; }
+    #conn-status { font-size: 12px; padding: 3px 8px; border-radius: 99px; background: #d97706; font-weight: bold; }
     .red-txt { color: #ef4444; }
     .blue-txt { color: #3b82f6; }
     .controls-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
@@ -60,7 +60,7 @@
 
   <div id="top-bar">
     <div class="scoreboard">
-      <span id="conn-status">서버 연결중...</span>
+      <span id="conn-status">연결 시도중...</span>
       <span class="red-txt">RED <span id="score-red">0</span></span>
       <span> : </span>
       <span class="blue-txt"><span id="score-blue">0</span> BLUE</span>
@@ -95,18 +95,156 @@
     </div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script>
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
     const statusBadge = document.getElementById('conn-status');
 
-    let myId = null;
+    let myId = Math.random().toString(36).substring(2, 10);
     let fieldW = 1000, fieldH = 600, goalH = 160;
     let gameState = { players: {}, ball: { x: 500, y: 300 }, score: { red: 0, blue: 0 }, goalCooldown: 0 };
     const input = { up: false, down: false, left: false, right: false, kick: false, dash: false };
 
-    // 경기장 그리기 루프 먼저 실행 (서버 연결 전에도 라인이 보이도록)
+    let ws = null;
+    let wsConnected = false;
+    let messageQueue = [];
+
+    function applyState(state) {
+      gameState = state;
+      document.getElementById('score-red').textContent = state.score.red;
+      document.getElementById('score-blue').textContent = state.score.blue;
+      if (state.players[myId]) {
+        document.getElementById('team-select').value = state.players[myId].team;
+      }
+      document.getElementById('mode-select').value = state.gameMode;
+      document.getElementById('ai-toggle').checked = state.useAI;
+    }
+
+    function sendMsg(obj) {
+      if (wsConnected && ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(obj));
+      } else {
+        messageQueue.push(obj);
+      }
+    }
+
+    // 1. 표준 WebSocket 시도
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    try {
+      ws = new WebSocket(`${proto}//${location.host}/game-stream`);
+      ws.onopen = () => {
+        wsConnected = true;
+        statusBadge.textContent = '온라인 연결됨 (WS)';
+        statusBadge.style.background = '#16a34a';
+      };
+      ws.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.type === 'init') {
+          myId = data.id;
+          fieldW = data.fieldW;
+          fieldH = data.fieldH;
+          goalH = data.goalH;
+        } else if (data.type === 'state') {
+          applyState(data);
+        }
+      };
+      ws.onclose = () => { wsConnected = false; };
+    } catch (e) {}
+
+    // 2. 1.5초 후에도 WS가 막혀있으면 학교 방화벽 통과용 HTTP 모드로 자동 전환
+    setTimeout(() => {
+      if (!wsConnected) {
+        setInterval(async () => {
+          if (wsConnected) return;
+          try {
+            const batch = messageQueue.splice(0, messageQueue.length);
+            const res = await fetch('/api/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: myId, messages: batch })
+            });
+            if (res.ok) {
+              const state = await res.json();
+              statusBadge.textContent = '온라인 연결됨 (방화벽우회)';
+              statusBadge.style.background = '#16a34a';
+              applyState(state);
+            }
+          } catch (err) {
+            statusBadge.textContent = '서버 응답 대기중';
+            statusBadge.style.background = '#dc2626';
+          }
+        }, 50);
+      }
+    }, 1500);
+
+    function sendSettings() {
+      sendMsg({
+        type: 'settings',
+        name: document.getElementById('nickname').value,
+        team: document.getElementById('team-select').value,
+        gameMode: document.getElementById('mode-select').value,
+        useAI: document.getElementById('ai-toggle').checked
+      });
+    }
+    document.getElementById('nickname').addEventListener('change', sendSettings);
+    document.getElementById('team-select').addEventListener('change', sendSettings);
+    document.getElementById('mode-select').addEventListener('change', sendSettings);
+    document.getElementById('ai-toggle').addEventListener('change', sendSettings);
+    document.getElementById('reset-btn').addEventListener('click', () => sendMsg({ type: 'reset' }));
+
+    window.addEventListener('keydown', (e) => {
+      if (document.activeElement.tagName === 'INPUT') return;
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = true;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = true;
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = true;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = true;
+      if (e.code === 'Space') input.kick = true;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.dash = true;
+      sendMsg({ type: 'input', input: { ...input } });
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = false;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = false;
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = false;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = false;
+      if (e.code === 'Space') input.kick = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.dash = false;
+      sendMsg({ type: 'input', input: { ...input } });
+    });
+
+    const joyZone = document.getElementById('joystick-zone');
+    const joyKnob = document.getElementById('joystick-knob');
+    joyZone.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const rect = joyZone.getBoundingClientRect();
+      const touch = e.touches[0];
+      const dx = touch.clientX - (rect.left + rect.width / 2);
+      const dy = touch.clientY - (rect.top + rect.height / 2);
+      const dist = Math.min(35, Math.hypot(dx, dy));
+      const angle = Math.atan2(dy, dx);
+      joyKnob.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px)`;
+
+      input.right = dx > 12;
+      input.left = dx < -12;
+      input.down = dy > 12;
+      input.up = dy < -12;
+      sendMsg({ type: 'input', input: { ...input } });
+    });
+    joyZone.addEventListener('touchend', () => {
+      joyKnob.style.transform = 'translate(0px, 0px)';
+      input.up = input.down = input.left = input.right = false;
+      sendMsg({ type: 'input', input: { ...input } });
+    });
+
+    const btnKick = document.getElementById('btn-kick');
+    btnKick.addEventListener('touchstart', (e) => { e.preventDefault(); input.kick = true; sendMsg({ type: 'input', input: { ...input } }); });
+    btnKick.addEventListener('touchend', (e) => { e.preventDefault(); input.kick = false; sendMsg({ type: 'input', input: { ...input } }); });
+
+    const btnDash = document.getElementById('btn-dash');
+    btnDash.addEventListener('touchstart', (e) => { e.preventDefault(); input.dash = true; sendMsg({ type: 'input', input: { ...input } }); });
+    btnDash.addEventListener('touchend', (e) => { e.preventDefault(); input.dash = false; sendMsg({ type: 'input', input: { ...input } }); });
+
     function draw() {
       ctx.clearRect(0, 0, fieldW, fieldH);
 
@@ -176,111 +314,6 @@
       requestAnimationFrame(draw);
     }
     draw();
-
-    // 학교 Wi-Fi 방화벽 우회를 위해 polling 우선 연결
-    if (typeof io !== 'undefined') {
-      const socket = io({
-        transports: ['polling', 'websocket'],
-        upgrade: false
-      });
-
-      socket.on('connect', () => {
-        statusBadge.textContent = '온라인 연결됨';
-        statusBadge.style.background = '#16a34a';
-      });
-
-      socket.on('disconnect', () => {
-        statusBadge.textContent = '연결 끊김';
-        statusBadge.style.background = '#dc2626';
-      });
-
-      socket.on('init', (data) => {
-        myId = data.id;
-        fieldW = data.fieldW;
-        fieldH = data.fieldH;
-        goalH = data.goalH;
-      });
-
-      socket.on('state', (state) => {
-        gameState = state;
-        document.getElementById('score-red').textContent = state.score.red;
-        document.getElementById('score-blue').textContent = state.score.blue;
-        if (state.players[myId]) {
-          document.getElementById('team-select').value = state.players[myId].team;
-        }
-        document.getElementById('mode-select').value = state.gameMode;
-        document.getElementById('ai-toggle').checked = state.useAI;
-      });
-
-      function sendSettings() {
-        socket.emit('updateSettings', {
-          name: document.getElementById('nickname').value,
-          team: document.getElementById('team-select').value,
-          gameMode: document.getElementById('mode-select').value,
-          useAI: document.getElementById('ai-toggle').checked
-        });
-      }
-      document.getElementById('nickname').addEventListener('change', sendSettings);
-      document.getElementById('team-select').addEventListener('change', sendSettings);
-      document.getElementById('mode-select').addEventListener('change', sendSettings);
-      document.getElementById('ai-toggle').addEventListener('change', sendSettings);
-      document.getElementById('reset-btn').addEventListener('click', () => socket.emit('resetMatch'));
-
-      window.addEventListener('keydown', (e) => {
-        if (document.activeElement.tagName === 'INPUT') return;
-        if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = true;
-        if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = true;
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = true;
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = true;
-        if (e.code === 'Space') input.kick = true;
-        if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.dash = true;
-        socket.emit('input', input);
-      });
-
-      window.addEventListener('keyup', (e) => {
-        if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = false;
-        if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = false;
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = false;
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = false;
-        if (e.code === 'Space') input.kick = false;
-        if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.dash = false;
-        socket.emit('input', input);
-      });
-
-      const joyZone = document.getElementById('joystick-zone');
-      const joyKnob = document.getElementById('joystick-knob');
-      joyZone.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        const rect = joyZone.getBoundingClientRect();
-        const touch = e.touches[0];
-        const dx = touch.clientX - (rect.left + rect.width / 2);
-        const dy = touch.clientY - (rect.top + rect.height / 2);
-        const dist = Math.min(35, Math.hypot(dx, dy));
-        const angle = Math.atan2(dy, dx);
-        joyKnob.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px)`;
-
-        input.right = dx > 12;
-        input.left = dx < -12;
-        input.down = dy > 12;
-        input.up = dy < -12;
-        socket.emit('input', input);
-      });
-      joyZone.addEventListener('touchend', () => {
-        joyKnob.style.transform = 'translate(0px, 0px)';
-        input.up = input.down = input.left = input.right = false;
-        socket.emit('input', input);
-      });
-
-      const btnKick = document.getElementById('btn-kick');
-      btnKick.addEventListener('touchstart', (e) => { e.preventDefault(); input.kick = true; socket.emit('input', input); });
-      btnKick.addEventListener('touchend', (e) => { e.preventDefault(); input.kick = false; socket.emit('input', input); });
-
-      const btnDash = document.getElementById('btn-dash');
-      btnDash.addEventListener('touchstart', (e) => { e.preventDefault(); input.dash = true; socket.emit('input', input); });
-      btnDash.addEventListener('touchend', (e) => { e.preventDefault(); input.dash = false; socket.emit('input', input); });
-    } else {
-      statusBadge.textContent = '스크립트 차단됨';
-    }
   </script>
 </body>
 </html>
