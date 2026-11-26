@@ -3,317 +3,789 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ONLINE SOCCER ARENA</title>
+  <title>FC ONLINE WEB ARENA</title>
   <style>
-    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-    body {
-      margin: 0; padding: 0; background: #111827; color: white;
-      font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; height: 100vh; overflow: hidden;
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; font-family: 'Pretendard', -apple-system, sans-serif; }
+    body { margin: 0; padding: 0; background: #0b0f19; color: #f8fafc; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    
+    /* 상단 네비게이션 */
+    #navbar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 20px; background: #111827; border-bottom: 1px solid #1f2937; z-index: 20;
     }
-    #top-bar {
-      display: flex; gap: 10px; align-items: center; justify-content: space-between;
-      width: 95%; max-width: 1000px; padding: 8px 14px; background: #1f2937;
-      border-radius: 10px; margin-bottom: 8px; flex-wrap: wrap;
+    .brand { font-size: 18px; font-weight: 900; color: #38bdf8; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
+    .nav-tabs { display: flex; gap: 8px; }
+    .tab-btn {
+      background: #1f2937; color: #cbd5e1; border: 1px solid #374151;
+      padding: 7px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px;
     }
-    .scoreboard { font-size: 22px; font-weight: 800; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
-    #conn-status { font-size: 12px; padding: 3px 8px; border-radius: 99px; background: #d97706; font-weight: bold; }
-    .red-txt { color: #ef4444; }
-    .blue-txt { color: #3b82f6; }
-    .controls-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-    input, select, button {
-      background: #374151; color: white; border: 1px solid #4b5563;
-      padding: 5px 10px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    .tab-btn.active { background: #2563eb; color: white; border-color: #3b82f6; }
+    .wallet-box {
+      display: flex; align-items: center; gap: 12px; background: #1f2937;
+      padding: 6px 14px; border-radius: 99px; border: 1px solid #374151; font-weight: 800; font-size: 14px;
     }
-    button:hover { background: #4b5563; }
-    #canvas-wrap {
-      position: relative; width: 95%; max-width: 1000px; aspect-ratio: 1000 / 600;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6); border-radius: 12px; overflow: hidden;
+    .coin-txt { color: #facc15; }
+    #conn-badge { font-size: 11px; padding: 3px 8px; border-radius: 99px; background: #d97706; }
+
+    /* 화면 전환 컨테이너 */
+    .view-section { display: none; flex: 1; overflow-y: auto; padding: 20px; }
+    .view-section.active { display: flex; flex-direction: column; align-items: center; }
+
+    /* 1. 경기장 (인게임) */
+    #view-match { padding: 8px; justify-content: center; background: #090d16; }
+    #hud-bar {
+      width: 100%; max-width: 1100px; display: flex; justify-content: space-between; align-items: center;
+      background: rgba(17, 24, 39, 0.9); padding: 6px 16px; border-radius: 10px; margin-bottom: 6px; border: 1px solid #1f2937;
+    }
+    .score-display { font-size: 20px; font-weight: 900; display: flex; align-items: center; gap: 12px; }
+    .timer-box { background: #0f172a; padding: 3px 10px; border-radius: 6px; color: #38bdf8; font-family: monospace; font-size: 18px; }
+    #canvas-container {
+      position: relative; width: 100%; max-width: 1100px; flex: 1; max-height: 620px;
+      border-radius: 12px; overflow: hidden; border: 2px solid #1e293b; box-shadow: 0 12px 35px rgba(0,0,0,0.7);
     }
     canvas { width: 100%; height: 100%; display: block; background: #15803d; }
-    
+
+    /* 키 설명 바 */
+    #key-guide {
+      width: 100%; max-width: 1100px; display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;
+      margin-top: 6px; font-size: 12px; color: #94a3b8; background: #111827; padding: 6px 12px; border-radius: 8px;
+    }
+    .key-cap { background: #334155; color: #f8fafc; padding: 2px 6px; border-radius: 4px; font-weight: 800; border-bottom: 2px solid #0f172a; }
+
+    /* 2. 로비 & 방 입장 */
+    .panel-card {
+      width: 100%; max-width: 900px; background: #111827; border: 1px solid #1f2937;
+      border-radius: 14px; padding: 20px; margin-bottom: 16px;
+    }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; width: 100%; max-width: 900px; }
+    input, select {
+      background: #1f2937; color: white; border: 1px solid #374151; padding: 8px 12px; border-radius: 8px; font-size: 14px;
+    }
+    .btn-primary {
+      background: #2563eb; color: white; border: none; padding: 10px 18px; border-radius: 8px;
+      font-weight: 800; cursor: pointer; font-size: 14px;
+    }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 900; cursor: pointer; }
+    .btn-danger { background: #dc2626; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+    /* 팀 카드 스타일 */
+    .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; width: 100%; }
+    .team-card {
+      background: linear-gradient(145deg, #1e293b, #0f172a); border: 2px solid #334155;
+      border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; position: relative;
+    }
+    .team-card.equipped { border-color: #facc15; box-shadow: 0 0 15px rgba(250, 204, 21, 0.25); }
+    .grade-badge { font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 6px; width: fit-content; }
+    .grade-BRONZE { background: #78350f; color: #fde68a; }
+    .grade-SILVER { background: #475569; color: #f8fafc; }
+    .grade-GOLD { background: #b45309; color: #fef08a; }
+    .grade-ICON { background: #6d28d9; color: #ede9fe; }
+    .ovr-num { font-size: 26px; font-weight: 900; color: #38bdf8; }
+
+    /* 팩 개봉 모달 */
+    #pack-modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100;
+      align-items: center; justify-content: center; flex-direction: column;
+    }
+    .pack-box {
+      width: 260px; height: 340px; border-radius: 18px; background: linear-gradient(135deg, #f59e0b, #7c3aed);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      box-shadow: 0 0 50px rgba(245, 158, 11, 0.6); animation: popIn 0.4s ease; text-align: center; padding: 20px;
+    }
+    @keyframes popIn { 0% { transform: scale(0.4) rotate(-8deg); opacity: 0; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+    /* 모바일 터치 조작 */
     #mobile-controls {
-      display: none; position: fixed; bottom: 15px; left: 0; right: 0;
-      padding: 0 25px; justify-content: space-between; pointer-events: none;
+      display: none; position: fixed; bottom: 45px; left: 0; right: 0; padding: 0 20px;
+      justify-content: space-between; pointer-events: none; z-index: 30;
     }
-    @media (pointer: coarse) {
-      #mobile-controls { display: flex; }
-    }
-    #joystick-zone {
-      width: 120px; height: 120px; background: rgba(255,255,255,0.15);
-      border-radius: 50%; position: relative; pointer-events: auto; touch-action: none;
-    }
-    #joystick-knob {
-      width: 50px; height: 50px; background: rgba(255,255,255,0.6);
-      border-radius: 50%; position: absolute; top: 35px; left: 35px;
-    }
-    .action-btns { display: flex; gap: 15px; align-items: center; pointer-events: auto; }
-    .touch-btn {
-      width: 72px; height: 72px; border-radius: 50%; border: none; font-weight: bold;
-      font-size: 15px; color: white; touch-action: none;
-    }
-    #btn-kick { background: rgba(239, 68, 68, 0.8); }
-    #btn-dash { background: rgba(59, 130, 246, 0.8); }
+    @media (pointer: coarse) { #mobile-controls { display: flex; } }
+    #joy-zone { width: 110px; height: 110px; background: rgba(255,255,255,0.15); border-radius: 50%; position: relative; pointer-events: auto; touch-action: none; }
+    #joy-knob { width: 44px; height: 44px; background: rgba(255,255,255,0.7); border-radius: 50%; position: absolute; top: 33px; left: 33px; }
+    .touch-btns { display: flex; gap: 10px; pointer-events: auto; }
+    .t-btn { width: 58px; height: 58px; border-radius: 50%; border: none; font-weight: 900; color: white; font-size: 13px; touch-action: none; }
   </style>
 </head>
 <body>
 
-  <div id="top-bar">
-    <div class="scoreboard">
-      <span id="conn-status">연결 시도중...</span>
-      <span class="red-txt">RED <span id="score-red">0</span></span>
-      <span> : </span>
-      <span class="blue-txt"><span id="score-blue">0</span> BLUE</span>
+  <!-- 상단 메뉴 바 -->
+  <div id="navbar">
+    <div class="brand">
+      ⚽ FC ONLINE ARENA
+      <span id="conn-badge">연결중...</span>
     </div>
-
-    <div class="controls-bar">
-      <input type="text" id="nickname" placeholder="닉네임" maxlength="10" style="width:85px;">
-      <select id="team-select">
-        <option value="red">레드팀</option>
-        <option value="blue">블루팀</option>
-      </select>
-      <select id="mode-select">
-        <option value="2v2">2 vs 2</option>
-        <option value="1v1">1 vs 1</option>
-      </select>
-      <label style="font-size:13px; display:flex; align-items:center; gap:3px;">
-        <input type="checkbox" id="ai-toggle" checked> AI 채우기
-      </label>
-      <button id="reset-btn">점수 리셋</button>
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('lobby')">로비 / 매칭</button>
+      <button class="tab-btn" onclick="switchTab('match')">경기장 입장</button>
+      <button class="tab-btn" onclick="switchTab('club')">내 구단 / 강화</button>
+      <button class="tab-btn" onclick="switchTab('packs')">팀 팩 상점</button>
+      <button class="tab-btn" onclick="switchTab('market')">이적시장 (사고팔기)</button>
+    </div>
+    <div class="wallet-box">
+      <span>보유 코인: <span class="coin-txt" id="coin-display">1,500</span> C</span>
     </div>
   </div>
 
-  <div id="canvas-wrap">
-    <canvas id="game" width="1000" height="600"></canvas>
+  <!-- 1. 로비 / 매칭 화면 -->
+  <div id="view-lobby" class="view-section active">
+    <div class="panel-card">
+      <h2 style="margin-top:0;">🏟️ 경기 설정 및 방 입장</h2>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <div>
+          <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">구단주 닉네임</div>
+          <input type="text" id="nick-input" placeholder="닉네임 입력" maxlength="10">
+        </div>
+        <div>
+          <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">방 코드 (친구와 같은 코드 입력)</div>
+          <input type="text" id="room-input" value="public_1" maxlength="15">
+        </div>
+        <div>
+          <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">진영 선택</div>
+          <select id="side-select">
+            <option value="red">레드팀 (왼쪽 진영)</option>
+            <option value="blue">블루팀 (오른쪽 진영)</option>
+          </select>
+        </div>
+        <div style="align-self:flex-end;">
+          <button class="btn-primary" onclick="enterMatch()">⚽ 경기 시작하기</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel-card">
+        <h3 style="margin-top:0; color:#facc15;">🏆 현재 출전 중인 내 대표 팀</h3>
+        <div id="lobby-active-team"></div>
+      </div>
+      <div class="panel-card">
+        <h3 style="margin-top:0; color:#38bdf8;">🎮 FIFA 조작 키 가이드</h3>
+        <ul style="line-height:1.9; font-size:14px; padding-left:18px; margin:0;">
+          <li><span class="key-cap">방향키</span> 또는 <span class="key-cap">W A S D</span> : 선수 이동</li>
+          <li><span class="key-cap">Q</span> : <b>선수 전환</b> (공과 가장 가까운 우리 팀 선수로 변경)</li>
+          <li><span class="key-cap">Space</span> 또는 <span class="key-cap">D</span> : <b>파워 슛</b> (길게 누르면 게이지 충전)</li>
+          <li><span class="key-cap">S</span> : <b>짧은 패스</b> (앞쪽 아군에게 자동 연결)</li>
+          <li><span class="key-cap">W</span> (공격 시) / <span class="key-cap">E</span> : <b>스루 패스</b> (아군 앞 공간 패스)</li>
+          <li><span class="key-cap">Shift</span> : <b>전력 질주</b> (스태미나 소모)</li>
+        </ul>
+      </div>
+    </div>
   </div>
 
-  <div id="mobile-controls">
-    <div id="joystick-zone"><div id="joystick-knob"></div></div>
-    <div class="action-btns">
-      <button class="touch-btn" id="btn-dash">대시</button>
-      <button class="touch-btn" id="btn-kick">슛</button>
+  <!-- 2. 인게임 경기장 화면 -->
+  <div id="view-match" class="view-section">
+    <div id="hud-bar">
+      <div class="score-display">
+        <span style="color:#ef4444;">RED <span id="hud-red">0</span></span>
+        <span class="timer-box" id="hud-timer">03:00</span>
+        <span style="color:#3b82f6;"><span id="hud-blue">0</span> BLUE</span>
+      </div>
+      <div style="font-size:13px; color:#cbd5e1;">
+        조종 선수: <b id="hud-player" style="color:#facc15;">-</b> | 방: <b id="hud-room">public_1</b>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="tab-btn" onclick="sendAction({type:'switchPlayer'})">선수 전환 (Q)</button>
+        <button class="tab-btn" onclick="sendAction({type:'restartMatch'})">재경기</button>
+      </div>
     </div>
+
+    <div id="canvas-container">
+      <canvas id="gameCanvas" width="1100" height="620"></canvas>
+    </div>
+
+    <div id="key-guide">
+      <span><span class="key-cap">방향키</span> 이동</span>
+      <span><span class="key-cap">Q</span> 선수 전환</span>
+      <span><span class="key-cap">Space / D</span> 슛(차징)</span>
+      <span><span class="key-cap">S</span> 패스</span>
+      <span><span class="key-cap">E</span> 스루패스</span>
+      <span><span class="key-cap">Shift</span> 전력질주</span>
+      <span>💡 경기 종료 시 승리 <b>+500 C</b> / 무승부 <b>+250 C</b> 지급!</span>
+    </div>
+
+    <div id="mobile-controls">
+      <div id="joy-zone"><div id="joy-knob"></div></div>
+      <div class="touch-btns">
+        <button class="t-btn" style="background:#6366f1;" id="t-switch">Q전환</button>
+        <button class="t-btn" style="background:#10b981;" id="t-pass">S패스</button>
+        <button class="t-btn" style="background:#3b82f6;" id="t-sprint">대시</button>
+        <button class="t-btn" style="background:#ef4444;" id="t-shoot">D슛</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 내 구단 & 팀 강화 화면 -->
+  <div id="view-club" class="view-section">
+    <div class="panel-card">
+      <h2 style="margin-top:0;">🛡️ 보유 팀 목록 및 팀 강화 (+1 ~ +10)</h2>
+      <p style="color:#94a3b8; font-size:13px;">팀을 강화하면 해당 팀 소속 선수 4명 전원의 스피드와 슛 파워가 영구 상승합니다.</p>
+      <div class="team-grid" id="my-teams-grid"></div>
+    </div>
+  </div>
+
+  <!-- 4. 팀 팩 상점 (상자 개봉) -->
+  <div id="view-packs" class="view-section">
+    <div class="panel-card">
+      <h2 style="margin-top:0;">🎁 팀 팩 상점 (상자 개봉)</h2>
+      <p style="color:#94a3b8; font-size:13px;">AI 대전이나 온라인 경기로 얻은 코인으로 팀 팩을 열어 새로운 구단 스쿼드를 획득하세요!</p>
+      <div class="grid-2">
+        <div class="team-card">
+          <span class="grade-badge grade-SILVER">SILVER ~ GOLD</span>
+          <h3 style="margin:4px 0;">스탠다드 팀 팩</h3>
+          <p style="font-size:13px; color:#cbd5e1; margin:0;">대한민국, 토트넘, PSG, 아스날 등 실버~골드 팀 1개 획득</p>
+          <button class="btn-primary" style="margin-top:10px;" onclick="openPack('standard', 600)">600 C 로 상자 열기</button>
+        </div>
+        <div class="team-card" style="border-color:#a855f7;">
+          <span class="grade-badge grade-ICON">GOLD ~ ICON</span>
+          <h3 style="margin:4px 0;">프리미엄 아이콘 팀 팩</h3>
+          <p style="font-size:13px; color:#cbd5e1; margin:0;">레알 마드리드, 맨시티, 바르셀로나 등 최상위 구단 높은 확률</p>
+          <button class="btn-gold" style="margin-top:10px;" onclick="openPack('premium', 1800)">1,800 C 로 상자 열기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 이적시장 (팀 단위 사고팔기) -->
+  <div id="view-market" class="view-section">
+    <div class="panel-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h2 style="margin:0;">🏛️ 이적시장 (팀 단위 거래소)</h2>
+          <p style="color:#94a3b8; font-size:13px; margin:4px 0 0 0;">보유한 팀을 판매 등록하거나 다른 구단주의 강화된 팀을 구매할 수 있습니다.</p>
+        </div>
+        <button class="btn-primary" onclick="loadMarket()">🔄 매물 새로고침</button>
+      </div>
+      <hr style="border-color:#1f2937; margin:16px 0;">
+      <div class="team-grid" id="market-grid"></div>
+    </div>
+  </div>
+
+  <!-- 팀 팩 개봉 결과 모달 -->
+  <div id="pack-modal" onclick="this.style.display='none'">
+    <div class="pack-box" id="pack-result-box"></div>
+    <p style="color:#cbd5e1; margin-top:14px; font-size:13px;">화면을 클릭하면 닫힙니다</p>
   </div>
 
   <script>
-    const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d');
-    const statusBadge = document.getElementById('conn-status');
+    // 로컬 구단 데이터 (브라우저 자동 저장)
+    const DEFAULT_TEAM = {
+      uid: 't_init_1', code: 'KOR', name: '대한민국 국대', grade: 'SILVER',
+      baseStat: 74, level: 1, color1: '#dc2626', color2: '#1d4ed8',
+      roster: ['손흥민', '이강인', '김민재', '조현우']
+    };
 
-    let myId = Math.random().toString(36).substring(2, 10);
-    let fieldW = 1000, fieldH = 600, goalH = 160;
-    let gameState = { players: {}, ball: { x: 500, y: 300 }, score: { red: 0, blue: 0 }, goalCooldown: 0 };
-    const input = { up: false, down: false, left: false, right: false, kick: false, dash: false };
+    let clubData = JSON.parse(localStorage.getItem('fc_arena_club') || 'null') || {
+      coins: 1500,
+      nickname: '구단주_' + Math.floor(Math.random() * 900 + 100),
+      equippedUid: 't_init_1',
+      teams: [DEFAULT_TEAM]
+    };
 
-    let ws = null;
-    let wsConnected = false;
-    let messageQueue = [];
-
-    function applyState(state) {
-      gameState = state;
-      document.getElementById('score-red').textContent = state.score.red;
-      document.getElementById('score-blue').textContent = state.score.blue;
-      if (state.players[myId]) {
-        document.getElementById('team-select').value = state.players[myId].team;
-      }
-      document.getElementById('mode-select').value = state.gameMode;
-      document.getElementById('ai-toggle').checked = state.useAI;
+    function saveClub() {
+      localStorage.setItem('fc_arena_club', JSON.stringify(clubData));
+      document.getElementById('coin-display').textContent = clubData.coins.toLocaleString();
+      renderClubUI();
     }
 
-    function sendMsg(obj) {
-      if (wsConnected && ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(obj));
+    function getEquippedTeam() {
+      return clubData.teams.find(t => t.uid === clubData.equippedUid) || clubData.teams[0];
+    }
+
+    document.getElementById('nick-input').value = clubData.nickname;
+    document.getElementById('nick-input').addEventListener('change', (e) => {
+      clubData.nickname = e.target.value || '구단주';
+      saveClub();
+    });
+
+    // 탭 전환
+    function switchTab(tabName) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('view-' + tabName).classList.add('active');
+      if (tabName === 'market') loadMarket();
+      if (tabName === 'club' || tabName === 'lobby') renderClubUI();
+    }
+
+    // 구단 UI 렌더링
+    function renderClubUI() {
+      const eq = getEquippedTeam();
+      const ovr = eq.baseStat + (eq.level - 1) * 3;
+      document.getElementById('lobby-active-team').innerHTML = `
+        <div class="team-card equipped">
+          <div style="display:flex; justify-content:space-between;">
+            <span class="grade-badge grade-${eq.grade}">${eq.grade}</span>
+            <span style="color:#facc15; font-weight:900;">+${eq.level}강</span>
+          </div>
+          <div style="font-size:18px; font-weight:900;">${eq.name} <span class="ovr-num">${ovr}</span></div>
+          <div style="font-size:12px; color:#94a3b8;">선발: ${eq.roster.join(' · ')}</div>
+        </div>
+      `;
+
+      const grid = document.getElementById('my-teams-grid');
+      grid.innerHTML = clubData.teams.map(t => {
+        const isEq = t.uid === eq.uid;
+        const tOvr = t.baseStat + (t.level - 1) * 3;
+        const upgCost = t.level * 400;
+        const sellPrice = Math.floor((t.baseStat * 15) + (t.level * 500));
+        return `
+          <div class="team-card ${isEq ? 'equipped' : ''}">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="grade-badge grade-${t.grade}">${t.grade}</span>
+              <span style="color:#facc15; font-weight:900;">+${t.level}강</span>
+            </div>
+            <div style="font-size:17px; font-weight:900;">${t.name} <span class="ovr-num">${tOvr}</span></div>
+            <div style="font-size:12px; color:#94a3b8;">${t.roster.join(', ')}</div>
+            <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+              <button class="btn-primary" style="flex:1; padding:6px;" onclick="equipTeam('${t.uid}')">${isEq ? '출전중' : '대표팀 설정'}</button>
+              <button class="btn-gold" style="flex:1; padding:6px;" onclick="upgradeTeam('${t.uid}')">강화 (${upgCost}C)</button>
+            </div>
+            ${clubData.teams.length > 1 ? `<button class="btn-danger" style="margin-top:4px; font-size:12px;" onclick="sellTeamToMarket('${t.uid}', ${sellPrice})">이적시장 판매 (${sellPrice}C)</button>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function equipTeam(uid) {
+      clubData.equippedUid = uid;
+      saveClub();
+      sendAction({ type: 'syncTeam', activeTeam: getEquippedTeam(), nickname: clubData.nickname });
+    }
+
+    function upgradeTeam(uid) {
+      const t = clubData.teams.find(x => x.uid === uid);
+      if (!t) return;
+      if (t.level >= 10) return alert('최대 강화 단계(+10)입니다!');
+      const cost = t.level * 400;
+      if (clubData.coins < cost) return alert('코인이 부족합니다! 경기에서 승리해 코인을 모으세요.');
+      clubData.coins -= cost;
+
+      // 강화 성공 확률 (레벨이 높을수록 조금씩 감소, 실패 시 레벨 유지)
+      const successRate = Math.max(0.35, 1 - (t.level - 1) * 0.08);
+      if (Math.random() <= successRate) {
+        t.level++;
+        alert(`🎉 강화 성공! [${t.name}] +${t.level}강 달성! (능력치 +3 상승)`);
       } else {
-        messageQueue.push(obj);
+        alert(`💥 강화 실패! 코인만 소모되고 강화 단계(+${t.level})는 유지되었습니다.`);
       }
+      saveClub();
     }
 
-    // 1. 표준 WebSocket 시도
-    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    try {
-      ws = new WebSocket(`${proto}//${location.host}/game-stream`);
-      ws.onopen = () => {
-        wsConnected = true;
-        statusBadge.textContent = '온라인 연결됨 (WS)';
-        statusBadge.style.background = '#16a34a';
-      };
-      ws.onmessage = (e) => {
-        const data = JSON.parse(e.data);
-        if (data.type === 'init') {
-          myId = data.id;
-          fieldW = data.fieldW;
-          fieldH = data.fieldH;
-          goalH = data.goalH;
-        } else if (data.type === 'state') {
-          applyState(data);
-        }
-      };
-      ws.onclose = () => { wsConnected = false; };
-    } catch (e) {}
+    // 팀 팩 뽑기
+    async function openPack(packType, cost) {
+      if (clubData.coins < cost) return alert('코인이 부족합니다!');
+      const res = await fetch('/api/market');
+      const { catalog } = await res.json();
+      clubData.coins -= cost;
 
-    // 2. 1.5초 후에도 WS가 막혀있으면 학교 방화벽 통과용 HTTP 모드로 자동 전환
-    setTimeout(() => {
-      if (!wsConnected) {
-        setInterval(async () => {
-          if (wsConnected) return;
-          try {
-            const batch = messageQueue.splice(0, messageQueue.length);
-            const res = await fetch('/api/sync', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ id: myId, messages: batch })
-            });
-            if (res.ok) {
-              const state = await res.json();
-              statusBadge.textContent = '온라인 연결됨 (방화벽우회)';
-              statusBadge.style.background = '#16a34a';
-              applyState(state);
-            }
-          } catch (err) {
-            statusBadge.textContent = '서버 응답 대기중';
-            statusBadge.style.background = '#dc2626';
-          }
-        }, 50);
-      }
-    }, 1500);
+      const pool = packType === 'premium'
+        ? catalog.filter(c => c.grade === 'GOLD' || c.grade === 'ICON')
+        : catalog.filter(c => c.grade === 'SILVER' || c.grade === 'GOLD');
 
-    function sendSettings() {
-      sendMsg({
-        type: 'settings',
-        name: document.getElementById('nickname').value,
-        team: document.getElementById('team-select').value,
-        gameMode: document.getElementById('mode-select').value,
-        useAI: document.getElementById('ai-toggle').checked
+      const picked = pool[Math.floor(Math.random() * pool.length)];
+      const newCard = { ...picked, uid: 't_' + Date.now(), level: 1 };
+      clubData.teams.push(newCard);
+      saveClub();
+
+      const modal = document.getElementById('pack-modal');
+      document.getElementById('pack-result-box').innerHTML = `
+        <span class="grade-badge grade-${newCard.grade}" style="font-size:14px;">${newCard.grade}</span>
+        <div style="font-size:48px; font-weight:900; margin:10px 0;">${newCard.baseStat}</div>
+        <h2 style="margin:4px 0;">${newCard.name}</h2>
+        <p style="font-size:13px; color:#f1f5f9;">${newCard.roster.join(' · ')}</p>
+      `;
+      modal.style.display = 'flex';
+    }
+
+    // 이적시장 사고팔기
+    async function loadMarket() {
+      const res = await fetch('/api/market');
+      const { market } = await res.json();
+      const grid = document.getElementById('market-grid');
+      grid.innerHTML = market.map(m => {
+        const t = m.team;
+        const ovr = t.baseStat + (t.level - 1) * 3;
+        return `
+          <div class="team-card">
+            <div style="display:flex; justify-content:space-between;">
+              <span class="grade-badge grade-${t.grade}">${t.grade}</span>
+              <span style="color:#facc15; font-weight:900;">+${t.level}강</span>
+            </div>
+            <div style="font-size:17px; font-weight:900;">${t.name} <span class="ovr-num">${ovr}</span></div>
+            <div style="font-size:12px; color:#94a3b8;">판매자: ${m.seller}</div>
+            <div style="font-size:12px; color:#cbd5e1;">${t.roster.join(', ')}</div>
+            <button class="btn-gold" style="margin-top:8px;" onclick="buyFromMarket('${m.marketId}', ${m.price})">
+              ${m.price.toLocaleString()} C 구매하기
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function sellTeamToMarket(uid, price) {
+      if (clubData.teams.length <= 1) return alert('최소 1개의 팀은 보유해야 합니다.');
+      const idx = clubData.teams.findIndex(t => t.uid === uid);
+      if (idx === -1) return;
+      const [soldTeam] = clubData.teams.splice(idx, 1);
+      if (clubData.equippedUid === uid) clubData.equippedUid = clubData.teams[0].uid;
+
+      await fetch('/api/market/list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seller: clubData.nickname, team: soldTeam, price })
       });
+      clubData.coins += price;
+      saveClub();
+      alert(`[${soldTeam.name}] 팀을 이적시장에 판매하여 ${price} C를 획득했습니다!`);
     }
-    document.getElementById('nickname').addEventListener('change', sendSettings);
-    document.getElementById('team-select').addEventListener('change', sendSettings);
-    document.getElementById('mode-select').addEventListener('change', sendSettings);
-    document.getElementById('ai-toggle').addEventListener('change', sendSettings);
-    document.getElementById('reset-btn').addEventListener('click', () => sendMsg({ type: 'reset' }));
 
+    async function buyFromMarket(marketId, price) {
+      if (clubData.coins < price) return alert('코인이 부족합니다!');
+      const res = await fetch('/api/market/buy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ marketId })
+      });
+      if (!res.ok) return alert('이미 다른 유저가 구매한 매물입니다.');
+      const { item } = await res.json();
+      clubData.coins -= price;
+      clubData.teams.push({ ...item.team, uid: 't_' + Date.now() });
+      saveClub();
+      loadMarket();
+      alert(`🎉 [${item.team.name}] (+${item.team.level}강) 영입 완료!`);
+    }
+
+    // ================= 실시간 멀티플레이어 & 학교 방화벽 우회 네트워크 =================
+    const userId = 'u_' + Math.random().toString(36).substring(2, 10);
+    let currentRoomId = 'public_1';
+    let gameState = null;
+    let rewardClaimedForMatch = false;
+
+    const input = { up: false, down: false, left: false, right: false, shoot: false, pass: false, through: false, sprint: false };
+    let ws = null;
+    let wsReady = false;
+    let outQueue = [];
+
+    const badge = document.getElementById('conn-badge');
+
+    function sendAction(obj) {
+      const payload = { ...obj, userId, roomId: currentRoomId };
+      if (wsReady && ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(payload));
+      } else {
+        outQueue.push(payload);
+      }
+    }
+
+    function connectNetwork() {
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      try {
+        ws = new WebSocket(`${proto}//${location.host}/game-stream`);
+        ws.onopen = () => {
+          wsReady = true;
+          badge.textContent = '온라인 연결됨 (WS)';
+          badge.style.background = '#16a34a';
+        };
+        ws.onmessage = (e) => {
+          const data = JSON.parse(e.data);
+          if (data.type === 'state') onReceiveState(data.state);
+        };
+        ws.onclose = () => { wsReady = false; };
+      } catch (e) {}
+
+      // 학교 Wi-Fi 방화벽에서 WS 차단 시 자동 HTTP 폴링 전환
+      setTimeout(() => {
+        if (!wsReady) {
+          setInterval(async () => {
+            if (wsReady) return;
+            try {
+              const batch = outQueue.splice(0, outQueue.length);
+              const res = await fetch('/api/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, roomId: currentRoomId, messages: batch })
+              });
+              if (res.ok) {
+                const state = await res.json();
+                badge.textContent = '온라인 연결됨 (방화벽우회)';
+                badge.style.background = '#16a34a';
+                onReceiveState(state);
+              }
+            } catch (err) {
+              badge.textContent = '서버 연결 재시도중';
+              badge.style.background = '#dc2626';
+            }
+          }, 55);
+        }
+      }, 1500);
+    }
+
+    function enterMatch() {
+      currentRoomId = document.getElementById('room-input').value.trim() || 'public_1';
+      const side = document.getElementById('side-select').value;
+      rewardClaimedForMatch = false;
+      sendAction({
+        type: 'join',
+        nickname: clubData.nickname,
+        teamSide: side,
+        activeTeam: getEquippedTeam()
+      });
+      switchTab('match');
+    }
+
+    function onReceiveState(state) {
+      gameState = state;
+      document.getElementById('hud-red').textContent = state.score.red;
+      document.getElementById('hud-blue').textContent = state.score.blue;
+      document.getElementById('hud-room').textContent = state.id;
+
+      const mins = String(Math.floor(state.timeLeft / 60)).padStart(2, '0');
+      const secs = String(state.timeLeft % 60).padStart(2, '0');
+      document.getElementById('hud-timer').textContent = `${mins}:${secs}`;
+
+      const me = state.users[userId];
+      if (me) {
+        const myEntity = state.entities.find(e => e.controllerUserId === userId);
+        if (myEntity) document.getElementById('hud-player').textContent = `${myEntity.name} (${myEntity.role})`;
+      }
+
+      // 경기 종료 보상 지급
+      if (state.matchEnded && !rewardClaimedForMatch && me) {
+        rewardClaimedForMatch = true;
+        const myScore = me.teamSide === 'red' ? state.score.red : state.score.blue;
+        const oppScore = me.teamSide === 'red' ? state.score.blue : state.score.red;
+        const reward = myScore > oppScore ? 500 : (myScore === oppScore ? 250 : 120);
+        clubData.coins += reward;
+        saveClub();
+      } else if (!state.matchEnded) {
+        rewardClaimedForMatch = false;
+      }
+    }
+
+    // 키보드 입력
     window.addEventListener('keydown', (e) => {
       if (document.activeElement.tagName === 'INPUT') return;
+      if (e.code === 'KeyQ') {
+        sendAction({ type: 'switchPlayer' });
+        return;
+      }
       if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = true;
-      if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = true;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        if (e.code === 'KeyS' && document.getElementById('view-match').classList.contains('active')) input.pass = true;
+        else input.down = true;
+      }
       if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = true;
-      if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = true;
-      if (e.code === 'Space') input.kick = true;
-      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.dash = true;
-      sendMsg({ type: 'input', input: { ...input } });
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        if (e.code === 'KeyD' && document.getElementById('view-match').classList.contains('active')) input.shoot = true;
+        else input.right = true;
+      }
+      if (e.code === 'Space') input.shoot = true;
+      if (e.code === 'KeyE') input.through = true;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.sprint = true;
+      sendAction({ type: 'input', input: { ...input } });
     });
 
     window.addEventListener('keyup', (e) => {
       if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = false;
-      if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = false;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') { input.down = false; input.pass = false; }
       if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = false;
-      if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = false;
-      if (e.code === 'Space') input.kick = false;
-      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.dash = false;
-      sendMsg({ type: 'input', input: { ...input } });
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') { input.right = false; input.shoot = false; }
+      if (e.code === 'Space') input.shoot = false;
+      if (e.code === 'KeyE') input.through = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.sprint = false;
+      sendAction({ type: 'input', input: { ...input } });
     });
 
-    const joyZone = document.getElementById('joystick-zone');
-    const joyKnob = document.getElementById('joystick-knob');
-    joyZone.addEventListener('touchmove', (e) => {
+    // 모바일 터치 컨트롤
+    const jZone = document.getElementById('joy-zone');
+    const jKnob = document.getElementById('joy-knob');
+    jZone.addEventListener('touchmove', (e) => {
       e.preventDefault();
-      const rect = joyZone.getBoundingClientRect();
-      const touch = e.touches[0];
-      const dx = touch.clientX - (rect.left + rect.width / 2);
-      const dy = touch.clientY - (rect.top + rect.height / 2);
-      const dist = Math.min(35, Math.hypot(dx, dy));
-      const angle = Math.atan2(dy, dx);
-      joyKnob.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px)`;
-
-      input.right = dx > 12;
-      input.left = dx < -12;
-      input.down = dy > 12;
-      input.up = dy < -12;
-      sendMsg({ type: 'input', input: { ...input } });
+      const r = jZone.getBoundingClientRect();
+      const t = e.touches[0];
+      const dx = t.clientX - (r.left + r.width / 2);
+      const dy = t.clientY - (r.top + r.height / 2);
+      const dist = Math.min(32, Math.hypot(dx, dy));
+      const ang = Math.atan2(dy, dx);
+      jKnob.style.transform = `translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist}px)`;
+      input.right = dx > 12; input.left = dx < -12; input.down = dy > 12; input.up = dy < -12;
+      sendAction({ type: 'input', input: { ...input } });
     });
-    joyZone.addEventListener('touchend', () => {
-      joyKnob.style.transform = 'translate(0px, 0px)';
+    jZone.addEventListener('touchend', () => {
+      jKnob.style.transform = 'translate(0,0)';
       input.up = input.down = input.left = input.right = false;
-      sendMsg({ type: 'input', input: { ...input } });
+      sendAction({ type: 'input', input: { ...input } });
     });
+    document.getElementById('t-switch').addEventListener('touchstart', (e) => { e.preventDefault(); sendAction({ type: 'switchPlayer' }); });
+    document.getElementById('t-pass').addEventListener('touchstart', (e) => { e.preventDefault(); input.pass = true; sendAction({ type: 'input', input: { ...input } }); });
+    document.getElementById('t-pass').addEventListener('touchend', (e) => { e.preventDefault(); input.pass = false; sendAction({ type: 'input', input: { ...input } }); });
+    document.getElementById('t-shoot').addEventListener('touchstart', (e) => { e.preventDefault(); input.shoot = true; sendAction({ type: 'input', input: { ...input } }); });
+    document.getElementById('t-shoot').addEventListener('touchend', (e) => { e.preventDefault(); input.shoot = false; sendAction({ type: 'input', input: { ...input } }); });
+    document.getElementById('t-sprint').addEventListener('touchstart', (e) => { e.preventDefault(); input.sprint = true; sendAction({ type: 'input', input: { ...input } }); });
+    document.getElementById('t-sprint').addEventListener('touchend', (e) => { e.preventDefault(); input.sprint = false; sendAction({ type: 'input', input: { ...input } }); });
 
-    const btnKick = document.getElementById('btn-kick');
-    btnKick.addEventListener('touchstart', (e) => { e.preventDefault(); input.kick = true; sendMsg({ type: 'input', input: { ...input } }); });
-    btnKick.addEventListener('touchend', (e) => { e.preventDefault(); input.kick = false; sendMsg({ type: 'input', input: { ...input } }); });
+    // ================= 대형 경기장 카메라 & 미니맵 렌더링 =================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const FW = 1800, FH = 1100, GH = 220;
+    let camX = (FW - canvas.width) / 2;
+    let camY = (FH - canvas.height) / 2;
 
-    const btnDash = document.getElementById('btn-dash');
-    btnDash.addEventListener('touchstart', (e) => { e.preventDefault(); input.dash = true; sendMsg({ type: 'input', input: { ...input } }); });
-    btnDash.addEventListener('touchend', (e) => { e.preventDefault(); input.dash = false; sendMsg({ type: 'input', input: { ...input } }); });
+    function renderLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    function draw() {
-      ctx.clearRect(0, 0, fieldW, fieldH);
+      // 카메라 추적 대상 (내 조종 선수 또는 공)
+      let focusX = FW / 2, focusY = FH / 2;
+      if (gameState) {
+        const myEnt = gameState.entities.find(e => e.controllerUserId === userId);
+        if (myEnt) {
+          focusX = myEnt.x * 0.7 + gameState.ball.x * 0.3;
+          focusY = myEnt.y * 0.7 + gameState.ball.y * 0.3;
+        } else {
+          focusX = gameState.ball.x;
+          focusY = gameState.ball.y;
+        }
+      }
+      const targetCamX = Math.max(0, Math.min(FW - canvas.width, focusX - canvas.width / 2));
+      const targetCamY = Math.max(0, Math.min(FH - canvas.height, focusY - canvas.height / 2));
+      camX += (targetCamX - camX) * 0.12;
+      camY += (targetCamY - camY) * 0.12;
 
-      for (let i = 0; i < 10; i++) {
+      ctx.save();
+      ctx.translate(-camX, -camY);
+
+      // 잔디 줄무늬
+      for (let i = 0; i < 18; i++) {
         ctx.fillStyle = i % 2 === 0 ? '#16a34a' : '#15803d';
-        ctx.fillRect(i * (fieldW / 10), 0, fieldW / 10, fieldH);
+        ctx.fillRect(i * (FW / 18), 0, FW / 18, FH);
       }
 
-      ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+      // 경기장 외곽선, 하프라인, 페널티 박스
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
       ctx.lineWidth = 4;
-      ctx.strokeRect(2, 2, fieldW - 4, fieldH - 4);
-      ctx.beginPath();
-      ctx.moveTo(fieldW / 2, 0);
-      ctx.lineTo(fieldW / 2, fieldH);
-      ctx.stroke();
+      ctx.strokeRect(4, 4, FW - 8, FH - 8);
+      ctx.beginPath(); ctx.moveTo(FW / 2, 0); ctx.lineTo(FW / 2, FH); ctx.stroke();
+      ctx.beginPath(); ctx.arc(FW / 2, FH / 2, 120, 0, Math.PI * 2); ctx.stroke();
 
-      ctx.beginPath();
-      ctx.arc(fieldW / 2, fieldH / 2, 80, 0, Math.PI * 2);
-      ctx.stroke();
+      // 페널티 박스
+      ctx.strokeRect(4, (FH - 480) / 2, 240, 480);
+      ctx.strokeRect(FW - 244, (FH - 480) / 2, 240, 480);
 
-      const goalTop = (fieldH - goalH) / 2;
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.35)';
-      ctx.fillRect(0, goalTop, 18, goalH);
-      ctx.fillStyle = 'rgba(59, 130, 246, 0.35)';
-      ctx.fillRect(fieldW - 18, goalTop, 18, goalH);
+      // 골대
+      const gTop = (FH - GH) / 2;
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+      ctx.fillRect(0, gTop, 22, GH);
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
+      ctx.fillRect(FW - 22, gTop, 22, GH);
 
-      if (gameState && gameState.players) {
-        Object.values(gameState.players).forEach(p => {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 18, 0, Math.PI * 2);
-          ctx.fillStyle = p.team === 'red' ? '#ef4444' : '#3b82f6';
-          ctx.fill();
-          ctx.lineWidth = p.id === myId ? 4 : 2;
-          ctx.strokeStyle = p.id === myId ? '#facc15' : '#ffffff';
-          ctx.stroke();
+      if (gameState) {
+        // 선수 그리기
+        gameState.entities.forEach(e => {
+          const isMine = e.controllerUserId === userId;
 
-          if (p.charge > 0) {
+          // 내 조종 선수 발밑 삼각형 커서
+          if (isMine) {
             ctx.fillStyle = '#facc15';
-            ctx.fillRect(p.x - 20, p.y - 30, (p.charge / 100) * 40, 5);
+            ctx.beginPath();
+            ctx.moveTo(e.x, e.y - 34);
+            ctx.lineTo(e.x - 8, e.y - 45);
+            ctx.lineTo(e.x + 8, e.y - 45);
+            ctx.fill();
           }
 
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, 19, 0, Math.PI * 2);
+          ctx.fillStyle = e.color1;
+          ctx.fill();
+          ctx.lineWidth = isMine ? 4 : 2.5;
+          ctx.strokeStyle = isMine ? '#facc15' : e.color2;
+          ctx.stroke();
+
+          // 포지션 약자 (GK, DF, MF, ST)
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(e.role, e.x, e.y + 4);
+
+          // 슛/패스 차징 게이지
+          if (e.charge > 0) {
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(e.x - 22, e.y - 30, 44, 6);
+            ctx.fillStyle = e.chargeType === 'shoot' ? '#ef4444' : '#38bdf8';
+            ctx.fillRect(e.x - 22, e.y - 30, (e.charge / 100) * 44, 6);
+          }
+
+          // 이름 및 스태미나 바
           ctx.fillStyle = 'white';
           ctx.font = 'bold 12px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(p.name, p.x, p.y + 32);
+          ctx.fillText(e.name, e.x, e.y + 33);
+
+          if (isMine) {
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(e.x - 18, e.y + 37, (e.stamina / 100) * 36, 3);
+          }
         });
+
+        // 축구공
+        const b = gameState.ball;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 11, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#0f172a';
+        ctx.stroke();
       }
 
-      const b = (gameState && gameState.ball) ? gameState.ball : { x: 500, y: 300 };
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, 11, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#111827';
-      ctx.stroke();
+      ctx.restore();
 
-      if (gameState && gameState.goalCooldown > 0) {
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(0, fieldH / 2 - 50, fieldW, 100);
-        ctx.fillStyle = '#facc15';
-        ctx.font = '900 54px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('GOAL!!', fieldW / 2, fieldH / 2 + 18);
+      // 우측 하단 레이더 미니맵
+      const mmW = 190, mmH = 116;
+      const mmX = canvas.width - mmW - 14, mmY = canvas.height - mmH - 14;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
+      ctx.fillRect(mmX, mmY, mmW, mmH);
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(mmX, mmY, mmW, mmH);
+
+      if (gameState) {
+        gameState.entities.forEach(e => {
+          ctx.fillStyle = e.controllerUserId === userId ? '#facc15' : (e.side === 'red' ? '#ef4444' : '#3b82f6');
+          ctx.beginPath();
+          ctx.arc(mmX + (e.x / FW) * mmW, mmY + (e.y / FH) * mmH, e.controllerUserId === userId ? 4 : 3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(mmX + (gameState.ball.x / FW) * mmW, mmY + (gameState.ball.y / FH) * mmH, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 골 / 경기 종료 배너
+        if (gameState.goalCooldown > 0) {
+          ctx.fillStyle = 'rgba(0,0,0,0.6)';
+          ctx.fillRect(0, canvas.height / 2 - 55, canvas.width, 110);
+          ctx.fillStyle = '#facc15';
+          ctx.font = '900 54px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('GOAL!!', canvas.width / 2, canvas.height / 2 + 18);
+        } else if (gameState.matchEnded) {
+          ctx.fillStyle = 'rgba(0,0,0,0.75)';
+          ctx.fillRect(0, canvas.height / 2 - 70, canvas.width, 140);
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = '900 42px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`경기 종료! RED ${gameState.score.red} : ${gameState.score.blue} BLUE`, canvas.width / 2, canvas.height / 2 - 5);
+          ctx.fillStyle = '#facc15';
+          ctx.font = 'bold 20px sans-serif';
+          ctx.fillText('경기 보상 코인이 지급되었습니다! 상단 [재경기] 또는 구단 메뉴를 이용하세요.', canvas.width / 2, canvas.height / 2 + 35);
+        }
       }
 
-      requestAnimationFrame(draw);
+      requestAnimationFrame(renderLoop);
     }
-    draw();
+
+    saveClub();
+    connectNetwork();
+    renderLoop();
   </script>
 </body>
 </html>
