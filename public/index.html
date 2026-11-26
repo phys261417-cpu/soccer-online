@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ONLINE SOCCER ARENA</title>
+  <style>
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    body {
+      margin: 0; padding: 0; background: #111827; color: white;
+      font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; height: 100vh; overflow: hidden;
+    }
+    #top-bar {
+      display: flex; gap: 10px; align-items: center; justify-content: space-between;
+      width: 95%; max-width: 1000px; padding: 8px 14px; background: #1f2937;
+      border-radius: 10px; margin-bottom: 8px; flex-wrap: wrap;
+    }
+    .scoreboard { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+    .red-txt { color: #ef4444; }
+    .blue-txt { color: #3b82f6; }
+    .controls-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    input, select, button {
+      background: #374151; color: white; border: 1px solid #4b5563;
+      padding: 5px 10px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    }
+    button:hover { background: #4b5563; }
+    #canvas-wrap {
+      position: relative; width: 95%; max-width: 1000px; aspect-ratio: 1000 / 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6); border-radius: 12px; overflow: hidden;
+    }
+    canvas { width: 100%; height: 100%; display: block; background: #15803d; }
+    
+    /* 모바일 터치 컨트롤러 */
+    #mobile-controls {
+      display: none; position: fixed; bottom: 15px; left: 0; right: 0;
+      padding: 0 25px; justify-content: space-between; pointer-events: none;
+    }
+    @media (pointer: coarse) {
+      #mobile-controls { display: flex; }
+    }
+    #joystick-zone {
+      width: 120px; height: 120px; background: rgba(255,255,255,0.15);
+      border-radius: 50%; position: relative; pointer-events: auto; touch-action: none;
+    }
+    #joystick-knob {
+      width: 50px; height: 50px; background: rgba(255,255,255,0.6);
+      border-radius: 50%; position: absolute; top: 35px; left: 35px;
+    }
+    .action-btns { display: flex; gap: 15px; align-items: center; pointer-events: auto; }
+    .touch-btn {
+      width: 72px; height: 72px; border-radius: 50%; border: none; font-weight: bold;
+      font-size: 15px; color: white; touch-action: none;
+    }
+    #btn-kick { background: rgba(239, 68, 68, 0.8); }
+    #btn-dash { background: rgba(59, 130, 246, 0.8); }
+  </style>
+</head>
+<body>
+
+  <div id="top-bar">
+    <div class="scoreboard">
+      <span class="red-txt">RED <span id="score-red">0</span></span>
+      <span> : </span>
+      <span class="blue-txt"><span id="score-blue">0</span> BLUE</span>
+    </div>
+
+    <div class="controls-bar">
+      <input type="text" id="nickname" placeholder="닉네임" maxlength="10" style="width:85px;">
+      <select id="team-select">
+        <option value="red">레드팀</option>
+        <option value="blue">블루팀</option>
+      </select>
+      <select id="mode-select">
+        <option value="2v2">2 vs 2</option>
+        <option value="1v1">1 vs 1</option>
+      </select>
+      <label style="font-size:13px; display:flex; align-items:center; gap:3px;">
+        <input type="checkbox" id="ai-toggle" checked> AI 채우기
+      </label>
+      <button id="reset-btn">점수 리셋</button>
+    </div>
+  </div>
+
+  <div id="canvas-wrap">
+    <canvas id="game" width="1000" height="600"></canvas>
+  </div>
+
+  <!-- 스마트폰 / 태블릿 전용 터치 UI -->
+  <div id="mobile-controls">
+    <div id="joystick-zone"><div id="joystick-knob"></div></div>
+    <div class="action-btns">
+      <button class="touch-btn" id="btn-dash">대시</button>
+      <button class="touch-btn" id="btn-kick">슛</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    let myId = null;
+    let fieldW = 1000, fieldH = 600, goalH = 160;
+    let gameState = { players: {}, ball: { x: 500, y: 300 }, score: { red: 0, blue: 0 }, goalCooldown: 0 };
+
+    const input = { up: false, down: false, left: false, right: false, kick: false, dash: false };
+
+    socket.on('init', (data) => {
+      myId = data.id;
+      fieldW = data.fieldW;
+      fieldH = data.fieldH;
+      goalH = data.goalH;
+    });
+
+    socket.on('state', (state) => {
+      gameState = state;
+      document.getElementById('score-red').textContent = state.score.red;
+      document.getElementById('score-blue').textContent = state.score.blue;
+      if (state.players[myId]) {
+        document.getElementById('team-select').value = state.players[myId].team;
+      }
+      document.getElementById('mode-select').value = state.gameMode;
+      document.getElementById('ai-toggle').checked = state.useAI;
+    });
+
+    // 설정 변경 이벤트
+    function sendSettings() {
+      socket.emit('updateSettings', {
+        name: document.getElementById('nickname').value,
+        team: document.getElementById('team-select').value,
+        gameMode: document.getElementById('mode-select').value,
+        useAI: document.getElementById('ai-toggle').checked
+      });
+    }
+    document.getElementById('nickname').addEventListener('change', sendSettings);
+    document.getElementById('team-select').addEventListener('change', sendSettings);
+    document.getElementById('mode-select').addEventListener('change', sendSettings);
+    document.getElementById('ai-toggle').addEventListener('change', sendSettings);
+    document.getElementById('reset-btn').addEventListener('click', () => socket.emit('resetMatch'));
+
+    // PC / 크롬북 키보드 조작
+    window.addEventListener('keydown', (e) => {
+      if (document.activeElement.tagName === 'INPUT') return;
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = true;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = true;
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = true;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = true;
+      if (e.code === 'Space') input.kick = true;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.dash = true;
+      socket.emit('input', input);
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = false;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = false;
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = false;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = false;
+      if (e.code === 'Space') input.kick = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.dash = false;
+      socket.emit('input', input);
+    });
+
+    // 모바일 가상 조이스틱
+    const joyZone = document.getElementById('joystick-zone');
+    const joyKnob = document.getElementById('joystick-knob');
+    joyZone.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const rect = joyZone.getBoundingClientRect();
+      const touch = e.touches[0];
+      const dx = touch.clientX - (rect.left + rect.width / 2);
+      const dy = touch.clientY - (rect.top + rect.height / 2);
+      const dist = Math.min(35, Math.hypot(dx, dy));
+      const angle = Math.atan2(dy, dx);
+      joyKnob.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px)`;
+
+      input.right = dx > 12;
+      input.left = dx < -12;
+      input.down = dy > 12;
+      input.up = dy < -12;
+      socket.emit('input', input);
+    });
+    joyZone.addEventListener('touchend', () => {
+      joyKnob.style.transform = 'translate(0px, 0px)';
+      input.up = input.down = input.left = input.right = false;
+      socket.emit('input', input);
+    });
+
+    // 모바일 슛 & 대시 버튼
+    const btnKick = document.getElementById('btn-kick');
+    btnKick.addEventListener('touchstart', (e) => { e.preventDefault(); input.kick = true; socket.emit('input', input); });
+    btnKick.addEventListener('touchend', (e) => { e.preventDefault(); input.kick = false; socket.emit('input', input); });
+
+    const btnDash = document.getElementById('btn-dash');
+    btnDash.addEventListener('touchstart', (e) => { e.preventDefault(); input.dash = true; socket.emit('input', input); });
+    btnDash.addEventListener('touchend', (e) => { e.preventDefault(); input.dash = false; socket.emit('input', input); });
+
+    // 화면 렌더링 루프
+    function draw() {
+      ctx.clearRect(0, 0, fieldW, fieldH);
+
+      // 잔디 줄무늬
+      for (let i = 0; i < 10; i++) {
+        ctx.fillStyle = i % 2 === 0 ? '#16a34a' : '#15803d';
+        ctx.fillRect(i * (fieldW / 10), 0, fieldW / 10, fieldH);
+      }
+
+      // 경기장 라인
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(2, 2, fieldW - 4, fieldH - 4);
+      ctx.beginPath();
+      ctx.moveTo(fieldW / 2, 0);
+      ctx.lineTo(fieldW / 2, fieldH);
+      ctx.stroke();
+
+      // 센터 서클
+      ctx.beginPath();
+      ctx.arc(fieldW / 2, fieldH / 2, 80, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 좌우 골대 영역
+      const goalTop = (fieldH - goalH) / 2;
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.35)';
+      ctx.fillRect(0, goalTop, 18, goalH);
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.35)';
+      ctx.fillRect(fieldW - 18, goalTop, 18, goalH);
+
+      // 플레이어 그리기
+      Object.values(gameState.players).forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 18, 0, Math.PI * 2);
+        ctx.fillStyle = p.team === 'red' ? '#ef4444' : '#3b82f6';
+        ctx.fill();
+        ctx.lineWidth = p.id === myId ? 4 : 2;
+        ctx.strokeStyle = p.id === myId ? '#facc15' : '#ffffff';
+        ctx.stroke();
+
+        // 슛 파워 게이지 바
+        if (p.charge > 0) {
+          ctx.fillStyle = '#facc15';
+          ctx.fillRect(p.x - 20, p.y - 30, (p.charge / 100) * 40, 5);
+        }
+
+        // 이름 표시
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(p.name, p.x, p.y + 32);
+      });
+
+      // 축구공 그리기
+      const b = gameState.ball;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, 11, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#111827';
+      ctx.stroke();
+
+      // 골 알림 메시지
+      if (gameState.goalCooldown > 0) {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(0, fieldH / 2 - 50, fieldW, 100);
+        ctx.fillStyle = '#facc15';
+        ctx.font = '900 54px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('GOAL!!', fieldW / 2, fieldH / 2 + 18);
+      }
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+  </script>
+</body>
+</html>
