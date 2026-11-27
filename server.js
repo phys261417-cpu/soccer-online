@@ -10,50 +10,44 @@ app.use(express.static(path.join(__dirname, 'public')));
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server, path: '/game-stream' });
 
-// 대형 경기장 규격
 const FIELD_W = 1800;
 const FIELD_H = 1100;
 const GOAL_H = 220;
-const PLAYER_R = 19;
+const PLAYER_R = 20;
 const BALL_R = 11;
-const MATCH_DURATION = 180; // 3분 경기 (초 단위)
+const MATCH_DURATION = 150; // 2분 30초 박진감 넘치는 경기
 
-// 기본 팀 카드 데이터베이스 (팀 단위 스쿼드 4인)
 const TEAM_CATALOG = [
-  { code: 'KOR', name: '대한민국 국대', grade: 'SILVER', baseStat: 74, price: 800, color1: '#dc2626', color2: '#1d4ed8', roster: ['손흥민', '이강인', '김민재', '조현우'] },
-  { code: 'TOT', name: '토트넘 홋스퍼', grade: 'SILVER', baseStat: 77, price: 1100, color1: '#f8fafc', color2: '#1e3a8a', roster: ['손흥민', '매디슨', '반더벤', '비카리오'] },
-  { code: 'PSG', name: '파리 생제르맹', grade: 'GOLD', baseStat: 82, price: 2000, color1: '#1e3a8a', color2: '#dc2626', roster: ['뎀벨레', '이강인', '마르퀴뇨스', '돈나룸마'] },
-  { code: 'BAY', name: '바이에른 뮌헨', grade: 'GOLD', baseStat: 84, price: 2400, color1: '#dc2626', color2: '#ffffff', roster: ['해리 케인', '무시알라', '김민재', '노이어'] },
-  { code: 'ARS', name: '아스날 FC', grade: 'GOLD', baseStat: 83, price: 2200, color1: '#ef4444', color2: '#ffffff', roster: ['사카', '외데고르', '살리바', '라야'] },
-  { code: 'BAR', name: 'FC 바르셀로나', grade: 'GOLD', baseStat: 85, price: 2800, color1: '#1d4ed8', color2: '#b91c1c', roster: ['야말', '페드리', '아라우호', '테어슈테겐'] },
-  { code: 'MCI', name: '맨체스터 시티', grade: 'ICON', baseStat: 89, price: 4500, color1: '#38bdf8', color2: '#ffffff', roster: ['홀란드', '더브라위너', '디아스', '에데르송'] },
-  { code: 'RMA', name: '레알 마드리드', grade: 'ICON', baseStat: 90, price: 5000, color1: '#ffffff', color2: '#eab308', roster: ['음바페', '벨링엄', '뤼디거', '쿠르투아'] }
+  { code: 'KOR', name: '대한민국 국대', grade: 'SILVER', baseStat: 76, price: 800, color1: '#dc2626', color2: '#1d4ed8', roster: ['손흥민', '이강인', '김민재', '조현우'], numbers: [7, 18, 4, 21] },
+  { code: 'TOT', name: '토트넘 홋스퍼', grade: 'SILVER', baseStat: 78, price: 1100, color1: '#f8fafc', color2: '#1e3a8a', roster: ['손흥민', '매디슨', '반더벤', '비카리오'], numbers: [7, 10, 37, 1] },
+  { code: 'PSG', name: '파리 생제르맹', grade: 'GOLD', baseStat: 83, price: 2000, color1: '#1e3a8a', color2: '#dc2626', roster: ['뎀벨레', '이강인', '마르퀴뇨스', '돈나룸마'], numbers: [10, 19, 5, 99] },
+  { code: 'BAY', name: '바이에른 뮌헨', grade: 'GOLD', baseStat: 85, price: 2400, color1: '#dc2626', color2: '#ffffff', roster: ['해리 케인', '무시알라', '김민재', '노이어'], numbers: [9, 42, 3, 1] },
+  { code: 'ARS', name: '아스날 FC', grade: 'GOLD', baseStat: 84, price: 2200, color1: '#ef4444', color2: '#ffffff', roster: ['사카', '외데고르', '살리바', '라야'], numbers: [7, 8, 2, 22] },
+  { code: 'BAR', name: 'FC 바르셀로나', grade: 'GOLD', baseStat: 86, price: 2800, color1: '#1d4ed8', color2: '#b91c1c', roster: ['야말', '페드리', '아라우호', '테어슈테겐'], numbers: [19, 8, 4, 1] },
+  { code: 'MCI', name: '맨체스터 시티', grade: 'ICON', baseStat: 90, price: 4500, color1: '#38bdf8', color2: '#ffffff', roster: ['홀란드', '더브라위너', '디아스', '에데르송'], numbers: [9, 17, 3, 31] },
+  { code: 'RMA', name: '레알 마드리드', grade: 'ICON', baseStat: 91, price: 5000, color1: '#ffffff', color2: '#eab308', roster: ['음바페', '벨링엄', '뤼디거', '쿠르투아'], numbers: [9, 5, 22, 1] }
 ];
 
-// 이적시장 매물 목록 (팀 단위 거래)
 let transferMarket = [
-  { marketId: 'm1', seller: '시스템 구단', team: { ...TEAM_CATALOG[1], level: 1 }, price: 1000 },
-  { marketId: 'm2', seller: '시스템 구단', team: { ...TEAM_CATALOG[3], level: 2 }, price: 2600 },
-  { marketId: 'm3', seller: '시스템 구단', team: { ...TEAM_CATALOG[7], level: 1 }, price: 4800 }
+  { marketId: 'm1', seller: '런던 스카우터', team: { ...TEAM_CATALOG[1], level: 2 }, price: 1350 },
+  { marketId: 'm2', seller: '뮌헨 구단주', team: { ...TEAM_CATALOG[3], level: 2 }, price: 2700 },
+  { marketId: 'm3', seller: '갈락티코스', team: { ...TEAM_CATALOG[7], level: 1 }, price: 4900 }
 ];
 
-// 방(Room) 저장소
 const rooms = {};
 
 function getOrCreateRoom(roomId) {
-  const id = (roomId || 'public_1').slice(0, 15);
+  const id = (roomId || 'quick_1').slice(0, 15);
   if (!rooms[id]) {
     rooms[id] = {
       id,
-      mode: '1v1', // '1v1' (유저 vs AI/유저 4인 스쿼드) 또는 '2v2' (2인 협동)
       users: {},
-      entities: [], // 경기장 위 8명의 선수 (레드 4명, 블루 4명)
-      ball: { x: FIELD_W / 2, y: FIELD_H / 2, vx: 0, vy: 0, lastTouchTeam: null },
+      entities: [],
+      ball: { x: FIELD_W / 2, y: FIELD_H / 2, z: 0, vz: 0, vx: 0, vy: 0, ownerEid: null },
       score: { red: 0, blue: 0 },
       timeLeft: MATCH_DURATION,
       goalCooldown: 0,
-      matchEnded: false,
-      rewardGiven: false
+      matchEnded: false
     };
     initRoomEntities(rooms[id]);
   }
@@ -70,16 +64,16 @@ function initRoomEntities(room) {
 
   const formations = {
     red: [
-      { role: 'ST', x: FIELD_W * 0.42, y: FIELD_H * 0.5 },
-      { role: 'MF', x: FIELD_W * 0.30, y: FIELD_H * 0.32 },
-      { role: 'DF', x: FIELD_W * 0.22, y: FIELD_H * 0.68 },
-      { role: 'GK', x: 55, y: FIELD_H * 0.5 }
+      { role: 'ST', x: FIELD_W * 0.43, y: FIELD_H * 0.5 },
+      { role: 'MF', x: FIELD_W * 0.31, y: FIELD_H * 0.30 },
+      { role: 'DF', x: FIELD_W * 0.23, y: FIELD_H * 0.70 },
+      { role: 'GK', x: 60, y: FIELD_H * 0.5 }
     ],
     blue: [
-      { role: 'ST', x: FIELD_W * 0.58, y: FIELD_H * 0.5 },
-      { role: 'MF', x: FIELD_W * 0.70, y: FIELD_H * 0.68 },
-      { role: 'DF', x: FIELD_W * 0.78, y: FIELD_H * 0.32 },
-      { role: 'GK', x: FIELD_W - 55, y: FIELD_H * 0.5 }
+      { role: 'ST', x: FIELD_W * 0.57, y: FIELD_H * 0.5 },
+      { role: 'MF', x: FIELD_W * 0.69, y: FIELD_H * 0.70 },
+      { role: 'DF', x: FIELD_W * 0.77, y: FIELD_H * 0.30 },
+      { role: 'GK', x: FIELD_W - 60, y: FIELD_H * 0.5 }
     ]
   };
 
@@ -92,19 +86,23 @@ function initRoomEntities(room) {
         idx,
         role: pos.role,
         name: tInfo.roster[idx] || `선수${idx + 1}`,
+        number: (tInfo.numbers && tInfo.numbers[idx]) || (idx + 7),
         teamName: tInfo.name,
         stat: tInfo.baseStat + (tInfo.level - 1) * 3,
-        color1: side === 'red' ? '#ef4444' : '#3b82f6',
-        color2: tInfo.color2,
+        color1: tInfo.color1 || (side === 'red' ? '#ef4444' : '#3b82f6'),
+        color2: tInfo.color2 || '#ffffff',
         x: pos.x,
         y: pos.y,
         homeX: pos.x,
         homeY: pos.y,
         vx: 0,
         vy: 0,
+        facing: side === 'red' ? 0 : Math.PI,
         stamina: 100,
         charge: 0,
-        chargeType: null, // 'shoot' | 'pass' | 'through'
+        chargeType: null,
+        skillCooldown: 0,
+        skillActive: 0,
         controllerUserId: null
       });
     });
@@ -131,14 +129,18 @@ function assignControllers(room) {
 function resetPositions(room) {
   room.ball.x = FIELD_W / 2;
   room.ball.y = FIELD_H / 2;
+  room.ball.z = 0;
   room.ball.vx = 0;
   room.ball.vy = 0;
+  room.ball.vz = 0;
+  room.ball.ownerEid = null;
   room.entities.forEach(e => {
     e.x = e.homeX;
     e.y = e.homeY;
     e.vx = 0;
     e.vy = 0;
     e.charge = 0;
+    e.skillActive = 0;
   });
 }
 
@@ -148,7 +150,6 @@ function switchClosestPlayer(room, user) {
   let minDist = Infinity;
   sideEntities.forEach((e, idx) => {
     if (idx === user.controlledIdx) return;
-    // 다른 유저가 이미 조종 중이면 제외
     if (e.controllerUserId && e.controllerUserId !== user.id) return;
     const d = Math.hypot(room.ball.x - e.x, room.ball.y - e.y);
     if (d < minDist) {
@@ -171,7 +172,7 @@ function handleAction(userId, roomId, msg) {
       teamSide: redUsers <= blueUsers ? 'red' : 'blue',
       controlledIdx: 0,
       lastSeen: Date.now(),
-      input: { up: false, down: false, left: false, right: false, shoot: false, pass: false, through: false, sprint: false },
+      input: { up: false, down: false, left: false, right: false, shoot: false, pass: false, through: false, sprint: false, skill: false },
       activeTeam: msg.activeTeam || { ...TEAM_CATALOG[0], level: 1 }
     };
     initRoomEntities(room);
@@ -186,7 +187,6 @@ function handleAction(userId, roomId, msg) {
       user.teamSide = msg.teamSide;
     }
     if (msg.activeTeam) user.activeTeam = msg.activeTeam;
-    if (msg.mode) room.mode = msg.mode;
     initRoomEntities(room);
   } else if (msg.type === 'input') {
     user.input = msg.input;
@@ -196,13 +196,11 @@ function handleAction(userId, roomId, msg) {
     room.score = { red: 0, blue: 0 };
     room.timeLeft = MATCH_DURATION;
     room.matchEnded = false;
-    room.rewardGiven = false;
     initRoomEntities(room);
     resetPositions(room);
   }
 }
 
-// 이적시장 API (팀 사고팔기)
 app.get('/api/market', (req, res) => {
   res.json({ market: transferMarket, catalog: TEAM_CATALOG });
 });
@@ -228,19 +226,16 @@ app.post('/api/market/buy', (req, res) => {
   res.json({ ok: true, item: bought, market: transferMarket });
 });
 
-// WebSocket 연결
 wss.on('connection', (ws) => {
   let boundUserId = null;
-  let boundRoomId = 'public_1';
+  let boundRoomId = 'quick_1';
 
   ws.on('message', (raw) => {
     try {
       const msg = JSON.parse(raw);
       boundUserId = msg.userId || boundUserId;
       boundRoomId = msg.roomId || boundRoomId;
-      if (boundUserId) {
-        handleAction(boundUserId, boundRoomId, msg);
-      }
+      if (boundUserId) handleAction(boundUserId, boundRoomId, msg);
     } catch (e) {}
   });
 
@@ -252,11 +247,10 @@ wss.on('connection', (ws) => {
   });
 });
 
-// 학교 방화벽 우회용 HTTP 폴링 동기화
 app.post('/api/sync', (req, res) => {
   const { userId, roomId, messages } = req.body;
   if (!userId) return res.status(400).end();
-  const rId = roomId || 'public_1';
+  const rId = roomId || 'quick_1';
   if (Array.isArray(messages)) {
     messages.forEach(m => handleAction(userId, rId, m));
   } else {
@@ -269,7 +263,6 @@ app.post('/api/sync', (req, res) => {
 function serializeRoom(room) {
   return {
     id: room.id,
-    mode: room.mode,
     users: room.users,
     entities: room.entities,
     ball: room.ball,
@@ -280,41 +273,35 @@ function serializeRoom(room) {
   };
 }
 
-// 지능형 골키퍼 및 필드 AI 로직
+// AI 로직 (유저보다 한 박자 여유 있게 반응하여 조작 쾌감 극대화)
 function updateEntityAI(room, e) {
   const ball = room.ball;
   const isRed = e.side === 'red';
-  const ownGoalX = isRed ? 45 : FIELD_W - 45;
+  const ownGoalX = isRed ? 55 : FIELD_W - 55;
   const targetGoalX = isRed ? FIELD_W : 0;
 
-  // 1. 골키퍼 AI (골대 라인에서 공의 Y좌표 추적 및 선방 다이빙)
   if (e.role === 'GK') {
-    const goalMinY = (FIELD_H - GOAL_H) / 2 + 15;
-    const goalMaxY = (FIELD_H + GOAL_H) / 2 - 15;
+    const goalMinY = (FIELD_H - GOAL_H) / 2 + 16;
+    const goalMaxY = (FIELD_H + GOAL_H) / 2 - 16;
     const desiredY = Math.max(goalMinY, Math.min(goalMaxY, ball.y));
     const distToBall = Math.hypot(ball.x - e.x, ball.y - e.y);
-
-    // 공이 페널티 박스 안으로 근접하면 전진 커트
-    const desiredX = distToBall < 170
-      ? ownGoalX + (isRed ? 65 : -65)
-      : ownGoalX;
+    const desiredX = distToBall < 160 ? ownGoalX + (isRed ? 55 : -55) : ownGoalX;
 
     const dx = desiredX - e.x;
     const dy = desiredY - e.y;
-    const spd = 0.55 + (e.stat / 200);
-    e.vx += Math.sign(dx) * Math.min(Math.abs(dx) * 0.08, spd);
-    e.vy += Math.sign(dy) * Math.min(Math.abs(dy) * 0.08, spd);
+    e.vx += Math.sign(dx) * Math.min(Math.abs(dx) * 0.07, 0.55);
+    e.vy += Math.sign(dy) * Math.min(Math.abs(dy) * 0.07, 0.55);
 
-    // 공을 잡거나 닿으면 전방으로 멀리 걷어내기
     if (distToBall < PLAYER_R + BALL_R + 10) {
-      const clearAngle = Math.atan2((Math.random() - 0.5) * 400, targetGoalX - e.x);
+      room.ball.ownerEid = null;
+      const clearAngle = Math.atan2((Math.random() - 0.5) * 350, targetGoalX - e.x);
       ball.vx = Math.cos(clearAngle) * 16;
       ball.vy = Math.sin(clearAngle) * 16;
+      ball.vz = 4;
     }
     return;
   }
 
-  // 2. 필드 플레이어 AI (공과 가장 가까운 아군 1명만 압박, 나머지는 포지션 유지)
   const teammates = room.entities.filter(t => t.side === e.side && t.role !== 'GK');
   let closestToBall = teammates[0];
   let minD = Infinity;
@@ -323,37 +310,50 @@ function updateEntityAI(room, e) {
     if (d < minD) { minD = d; closestToBall = t; }
   });
 
-  let destX = e.homeX + (ball.x - FIELD_W / 2) * 0.45;
+  // 공을 소유하고 있을 때 AI 드리블 및 슛/패스
+  if (ball.ownerEid === e.eid) {
+    const distToGoal = Math.hypot(targetGoalX - e.x, FIELD_H / 2 - e.y);
+    const angleToGoal = Math.atan2(FIELD_H / 2 - e.y, targetGoalX - e.x);
+    e.vx += Math.cos(angleToGoal) * 0.52;
+    e.vy += Math.sin(angleToGoal) * 0.52;
+
+    if (distToGoal < 460 && Math.random() < 0.04) {
+      room.ball.ownerEid = null;
+      const shotAngle = Math.atan2((FIELD_H / 2 + (Math.random() - 0.5) * 140) - ball.y, targetGoalX - ball.x);
+      ball.vx = Math.cos(shotAngle) * 16.5;
+      ball.vy = Math.sin(shotAngle) * 16.5;
+      ball.vz = 3.5;
+    } else if (Math.random() < 0.015) {
+      const target = findPassTarget(room, e);
+      if (target) {
+        room.ball.ownerEid = null;
+        const pAng = Math.atan2(target.y - ball.y, target.x - ball.x);
+        ball.vx = Math.cos(pAng) * 14;
+        ball.vy = Math.sin(pAng) * 14;
+      }
+    }
+    return;
+  }
+
+  let destX = e.homeX + (ball.x - FIELD_W / 2) * 0.42;
   let destY = e.homeY + (ball.y - FIELD_H / 2) * 0.35;
 
   if (closestToBall && closestToBall.eid === e.eid) {
-    const angleToGoal = Math.atan2(FIELD_H / 2 - ball.y, targetGoalX - ball.x);
-    destX = ball.x - Math.cos(angleToGoal) * 26;
-    destY = ball.y - Math.sin(angleToGoal) * 26;
+    destX = ball.x;
+    destY = ball.y;
   }
 
   const dx = destX - e.x;
   const dy = destY - e.y;
   const dist = Math.hypot(dx, dy);
-  const accel = 0.48 + (e.stat / 250);
+  // AI 가속도를 유저(0.88)보다 낮게 설정해 유저 조작 캐릭터가 항상 더 빠름
+  const aiAccel = 0.46 + (e.stat - 75) * 0.004;
   if (dist > 8) {
-    e.vx += (dx / dist) * accel;
-    e.vy += (dy / dist) * accel;
-  }
-
-  // AI 슛/패스 판단
-  const distToBall = Math.hypot(ball.x - e.x, ball.y - e.y);
-  if (distToBall < PLAYER_R + BALL_R + 12) {
-    const distToGoal = Math.hypot(targetGoalX - e.x, FIELD_H / 2 - e.y);
-    const angleToGoal = Math.atan2((FIELD_H / 2 + (Math.random() - 0.5) * 120) - ball.y, targetGoalX - ball.x);
-    const power = distToGoal < 520 ? 15 : 11;
-    ball.vx = Math.cos(angleToGoal) * power;
-    ball.vy = Math.sin(angleToGoal) * power;
-    ball.lastTouchTeam = e.side;
+    e.vx += (dx / dist) * aiAccel;
+    e.vy += (dy / dist) * aiAccel;
   }
 }
 
-// 패스 타겟 자동 탐색 (진행 방향 앞쪽 아군)
 function findPassTarget(room, passer) {
   const dirX = passer.side === 'red' ? 1 : -1;
   let best = null;
@@ -363,36 +363,24 @@ function findPassTarget(room, passer) {
     const dx = teammate.x - passer.x;
     const dy = teammate.y - passer.y;
     const dist = Math.hypot(dx, dy);
-    if (dist < 40 || dist > 850) return;
-    const forwardBonus = dx * dirX * 0.5;
-    const score = forwardBonus - dist * 0.3;
-    if (score > bestScore) {
-      bestScore = score;
-      best = teammate;
-    }
+    if (dist < 50 || dist > 900) return;
+    const score = (dx * dirX * 0.6) - dist * 0.25;
+    if (score > bestScore) { bestScore = score; best = teammate; }
   });
   return best;
 }
 
-// 메인 50FPS 물리 & 경기 루프
+// 메인 50FPS 물리 루프
 setInterval(() => {
   const now = Date.now();
   Object.values(rooms).forEach(room => {
-    // 6초 이상 응답 없는 HTTP 유저 제거
     let changed = false;
     Object.values(room.users).forEach(u => {
-      if (now - u.lastSeen > 6000) {
-        delete room.users[u.id];
-        changed = true;
-      }
+      if (now - u.lastSeen > 6000) { delete room.users[u.id]; changed = true; }
     });
     if (changed) assignControllers(room);
 
-    if (room.matchEnded) {
-      broadcastRoom(room);
-      return;
-    }
-
+    if (room.matchEnded) { broadcastRoom(room); return; }
     if (room.goalCooldown > 0) {
       room.goalCooldown--;
       if (room.goalCooldown === 0) resetPositions(room);
@@ -400,71 +388,83 @@ setInterval(() => {
       return;
     }
 
-    // 경기 시간 감소 (유저가 1명이라도 있을 때)
     if (Object.keys(room.users).length > 0) {
       room.timeLeft -= 1 / 50;
-      if (room.timeLeft <= 0) {
-        room.timeLeft = 0;
-        room.matchEnded = true;
-      }
+      if (room.timeLeft <= 0) { room.timeLeft = 0; room.matchEnded = true; }
     }
 
     room.entities.forEach(e => {
       const controller = e.controllerUserId ? room.users[e.controllerUserId] : null;
-      const statFactor = 1 + (e.stat - 70) * 0.008;
+      const statFactor = 1 + (e.stat - 75) * 0.007;
+
+      if (e.skillCooldown > 0) e.skillCooldown--;
+      if (e.skillActive > 0) e.skillActive--;
 
       if (controller) {
         const inp = controller.input;
-        let baseAccel = 0.58 * statFactor;
-        if (inp.sprint && e.stamina > 5) {
-          baseAccel *= 1.38;
-          e.stamina = Math.max(0, e.stamina - 0.6);
+        // 유저 조종 캐릭터는 AI보다 훨씬 빠르고 민첩한 반응성 제공
+        let moveAccel = 0.88 * statFactor;
+
+        if (inp.sprint && e.stamina > 3) {
+          moveAccel *= 1.32;
+          e.stamina = Math.max(0, e.stamina - 0.5);
         } else {
-          e.stamina = Math.min(100, e.stamina + 0.25);
+          e.stamina = Math.min(100, e.stamina + 0.35);
         }
 
-        if (inp.up) e.vy -= baseAccel;
-        if (inp.down) e.vy += baseAccel;
-        if (inp.left) e.vx -= baseAccel;
-        if (inp.right) e.vx += baseAccel;
+        // 개인기 치달(Z/C 키): 순간 가속 폭발 + 상대 태클 회피
+        if (inp.skill && e.skillCooldown === 0) {
+          e.skillCooldown = 55;
+          e.skillActive = 16;
+          e.vx *= 1.85;
+          e.vy *= 1.85;
+        }
 
-        // 슛/패스 차징
+        let ix = (inp.right ? 1 : 0) - (inp.left ? 1 : 0);
+        let iy = (inp.down ? 1 : 0) - (inp.up ? 1 : 0);
+        if (ix !== 0 || iy !== 0) {
+          const norm = Math.hypot(ix, iy);
+          e.vx += (ix / norm) * moveAccel;
+          e.vy += (iy / norm) * moveAccel;
+        } else {
+          // 키를 떼면 미끄러지지 않고 즉각 제동
+          e.vx *= 0.72;
+          e.vy *= 0.72;
+        }
+
+        // 슛 / 패스 / 스루패스 차징 및 발사
         if (inp.shoot) {
           e.chargeType = 'shoot';
-          e.charge = Math.min(100, e.charge + 4.5);
+          e.charge = Math.min(100, e.charge + 5.5);
         } else if (inp.pass) {
           e.chargeType = 'pass';
-          e.charge = Math.min(100, e.charge + 6);
+          e.charge = Math.min(100, e.charge + 7);
         } else if (inp.through) {
           e.chargeType = 'through';
-          e.charge = Math.min(100, e.charge + 6);
+          e.charge = Math.min(100, e.charge + 7);
         } else if (e.charge > 0) {
-          const dx = room.ball.x - e.x;
-          const dy = room.ball.y - e.y;
-          const dist = Math.hypot(dx, dy);
-
-          if (dist < PLAYER_R + BALL_R + 24) {
+          const distToBall = Math.hypot(room.ball.x - e.x, room.ball.y - e.y);
+          if (room.ball.ownerEid === e.eid || distToBall < PLAYER_R + BALL_R + 28) {
+            room.ball.ownerEid = null;
             if (e.chargeType === 'shoot') {
-              const power = (11 + (e.charge / 100) * 13) * statFactor;
-              const speed = Math.hypot(e.vx, e.vy);
-              const dirX = speed > 0.3 ? e.vx / speed : (e.side === 'red' ? 1 : -1);
-              const dirY = speed > 0.3 ? e.vy / speed : 0;
-              room.ball.vx = dirX * power;
-              room.ball.vy = dirY * power;
+              const power = (13.5 + (e.charge / 100) * 13) * statFactor;
+              room.ball.vx = Math.cos(e.facing) * power;
+              room.ball.vy = Math.sin(e.facing) * power;
+              room.ball.vz = 2.5 + (e.charge / 100) * 4.5;
             } else {
               const target = findPassTarget(room, e);
               if (target) {
-                const leadX = e.chargeType === 'through' ? (e.side === 'red' ? 110 : -110) : 0;
-                const angle = Math.atan2(target.y - room.ball.y, (target.x + leadX) - room.ball.x);
-                const passSpeed = (12 + (e.charge / 100) * 6) * statFactor;
-                room.ball.vx = Math.cos(angle) * passSpeed;
-                room.ball.vy = Math.sin(angle) * passSpeed;
+                const leadX = e.chargeType === 'through' ? (e.side === 'red' ? 125 : -125) : 0;
+                const ang = Math.atan2(target.y - room.ball.y, (target.x + leadX) - room.ball.x);
+                const pSpd = (14 + (e.charge / 100) * 6) * statFactor;
+                room.ball.vx = Math.cos(ang) * pSpd;
+                room.ball.vy = Math.sin(ang) * pSpd;
+                room.ball.vz = e.chargeType === 'through' ? 2.5 : 0.8;
               } else {
-                room.ball.vx = (dx / dist) * 13;
-                room.ball.vy = (dy / dist) * 13;
+                room.ball.vx = Math.cos(e.facing) * 15;
+                room.ball.vy = Math.sin(e.facing) * 15;
               }
             }
-            room.ball.lastTouchTeam = e.side;
           }
           e.charge = 0;
           e.chargeType = null;
@@ -474,31 +474,36 @@ setInterval(() => {
         e.stamina = Math.min(100, e.stamina + 0.3);
       }
 
-      e.vx *= 0.87;
-      e.vy *= 0.87;
+      e.vx *= 0.85;
+      e.vy *= 0.85;
       e.x += e.vx;
       e.y += e.vy;
+
+      if (Math.hypot(e.vx, e.vy) > 0.35) {
+        e.facing = Math.atan2(e.vy, e.vx);
+      }
 
       e.x = Math.max(PLAYER_R, Math.min(FIELD_W - PLAYER_R, e.x));
       e.y = Math.max(PLAYER_R, Math.min(FIELD_H - PLAYER_R, e.y));
 
-      // 드리블(공 접촉)
-      const dx = room.ball.x - e.x;
-      const dy = room.ball.y - e.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist < PLAYER_R + BALL_R && dist > 0) {
-        const nx = dx / dist;
-        const ny = dy / dist;
-        const overlap = (PLAYER_R + BALL_R) - dist;
-        room.ball.x += nx * overlap;
-        room.ball.y += ny * overlap;
-        room.ball.vx = nx * 4.5 + e.vx * 0.7;
-        room.ball.vy = ny * 4.5 + e.vy * 0.7;
-        room.ball.lastTouchTeam = e.side;
+      // 드리블(볼 키핑) 및 뺏기 판정
+      const distToBall = Math.hypot(room.ball.x - e.x, room.ball.y - e.y);
+      if (distToBall < PLAYER_R + BALL_R + 6 && room.ball.z < 18) {
+        if (!room.ball.ownerEid) {
+          room.ball.ownerEid = e.eid;
+        } else if (room.ball.ownerEid !== e.eid) {
+          const currentOwner = room.entities.find(o => o.eid === room.ball.ownerEid);
+          // 개인기 시전 중이 아닐 때만 상대가 볼 탈취 가능
+          if (currentOwner && currentOwner.side !== e.side && currentOwner.skillActive === 0) {
+            if (controller || Math.random() < 0.08) {
+              room.ball.ownerEid = e.eid;
+            }
+          }
+        }
       }
     });
 
-    // 선수 간 충돌 방지
+    // 선수 간 충돌 밀어내기
     for (let i = 0; i < room.entities.length; i++) {
       for (let j = i + 1; j < room.entities.length; j++) {
         const p1 = room.entities[i], p2 = room.entities[j];
@@ -515,11 +520,37 @@ setInterval(() => {
       }
     }
 
-    // 공 물리
-    room.ball.x += room.ball.vx;
-    room.ball.y += room.ball.vy;
-    room.ball.vx *= 0.986;
-    room.ball.vy *= 0.986;
+    // 드리블 중일 때 공이 드리블러 발 앞에 붙어서 이동
+    if (room.ball.ownerEid) {
+      const dribbler = room.entities.find(e => e.eid === room.ball.ownerEid);
+      if (dribbler) {
+        const dribbleOffset = PLAYER_R + BALL_R - 2;
+        const targetBX = dribbler.x + Math.cos(dribbler.facing) * dribbleOffset;
+        const targetBY = dribbler.y + Math.sin(dribbler.facing) * dribbleOffset;
+        room.ball.x += (targetBX - room.ball.x) * 0.65;
+        room.ball.y += (targetBY - room.ball.y) * 0.65;
+        room.ball.vx = dribbler.vx;
+        room.ball.vy = dribbler.vy;
+        room.ball.z = 0;
+      } else {
+        room.ball.ownerEid = null;
+      }
+    } else {
+      // 프리볼 물리 이동 및 바운드
+      room.ball.x += room.ball.vx;
+      room.ball.y += room.ball.vy;
+      room.ball.vx *= 0.985;
+      room.ball.vy *= 0.985;
+
+      if (room.ball.z > 0 || room.ball.vz !== 0) {
+        room.ball.z += room.ball.vz;
+        room.ball.vz -= 0.35;
+        if (room.ball.z <= 0) {
+          room.ball.z = 0;
+          room.ball.vz = Math.abs(room.ball.vz) > 1.5 ? -room.ball.vz * 0.55 : 0;
+        }
+      }
+    }
 
     if (room.ball.y - BALL_R < 0) { room.ball.y = BALL_R; room.ball.vy *= -0.85; }
     if (room.ball.y + BALL_R > FIELD_H) { room.ball.y = FIELD_H - BALL_R; room.ball.vy *= -0.85; }
@@ -529,6 +560,7 @@ setInterval(() => {
       if (inGoalY) {
         room.score.blue++;
         room.goalCooldown = 90;
+        room.ball.ownerEid = null;
       } else {
         room.ball.x = BALL_R;
         room.ball.vx *= -0.85;
@@ -537,6 +569,7 @@ setInterval(() => {
       if (inGoalY) {
         room.score.red++;
         room.goalCooldown = 90;
+        room.ball.ownerEid = null;
       } else {
         room.ball.x = FIELD_W - BALL_R;
         room.ball.vx *= -0.85;
@@ -550,9 +583,7 @@ setInterval(() => {
 function broadcastRoom(room) {
   const payload = JSON.stringify({ type: 'state', state: serializeRoom(room) });
   wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(payload);
-    }
+    if (client.readyState === WebSocket.OPEN) client.send(payload);
   });
 }
 
