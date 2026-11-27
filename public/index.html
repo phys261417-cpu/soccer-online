@@ -3,286 +3,270 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>FC ONLINE WEB ARENA</title>
+  <title>FC ONLINE 2.5D ARENA</title>
   <style>
     * { box-sizing: border-box; user-select: none; -webkit-user-select: none; font-family: 'Pretendard', -apple-system, sans-serif; }
-    body { margin: 0; padding: 0; background: #0b0f19; color: #f8fafc; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-    
-    /* 상단 네비게이션 */
+    body { margin: 0; padding: 0; background: #070b14; color: #f8fafc; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+    /* 상단 통합 네비게이션 */
     #navbar {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 10px 20px; background: #111827; border-bottom: 1px solid #1f2937; z-index: 20;
+      padding: 8px 18px; background: #0f172a; border-bottom: 1px solid #1e293b; z-index: 20; gap: 10px; flex-wrap: wrap;
     }
-    .brand { font-size: 18px; font-weight: 900; color: #38bdf8; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
-    .nav-tabs { display: flex; gap: 8px; }
+    .brand { font-size: 17px; font-weight: 900; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+    .nav-tabs { display: flex; gap: 6px; }
     .tab-btn {
-      background: #1f2937; color: #cbd5e1; border: 1px solid #374151;
-      padding: 7px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px;
+      background: #1e293b; color: #cbd5e1; border: 1px solid #334155;
+      padding: 7px 14px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 13px; transition: 0.15s;
     }
-    .tab-btn.active { background: #2563eb; color: white; border-color: #3b82f6; }
+    .tab-btn:hover { background: #334155; }
+    .tab-btn.active { background: #2563eb; color: white; border-color: #60a5fa; box-shadow: 0 0 12px rgba(37,99,235,0.4); }
     .wallet-box {
-      display: flex; align-items: center; gap: 12px; background: #1f2937;
-      padding: 6px 14px; border-radius: 99px; border: 1px solid #374151; font-weight: 800; font-size: 14px;
+      display: flex; align-items: center; gap: 10px; background: #1e293b;
+      padding: 6px 14px; border-radius: 99px; border: 1px solid #334155; font-weight: 900; font-size: 14px;
     }
     .coin-txt { color: #facc15; }
-    #conn-badge { font-size: 11px; padding: 3px 8px; border-radius: 99px; background: #d97706; }
+    #conn-badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: #d97706; }
 
-    /* 화면 전환 컨테이너 */
-    .view-section { display: none; flex: 1; overflow-y: auto; padding: 20px; }
+    /* 화면 컨테이너 */
+    .view-section { display: none; flex: 1; overflow-y: auto; padding: 14px; }
     .view-section.active { display: flex; flex-direction: column; align-items: center; }
 
-    /* 1. 경기장 (인게임) */
-    #view-match { padding: 8px; justify-content: center; background: #090d16; }
-    #hud-bar {
-      width: 100%; max-width: 1100px; display: flex; justify-content: space-between; align-items: center;
-      background: rgba(17, 24, 39, 0.9); padding: 6px 16px; border-radius: 10px; margin-bottom: 6px; border: 1px solid #1f2937;
+    /* 1. 메인 경기장 (접속 즉시 플레이 + 퀵 매칭 바) */
+    #view-match { padding: 8px; justify-content: center; background: #060911; }
+    #quick-bar {
+      width: 100%; max-width: 1140px; display: flex; justify-content: space-between; align-items: center;
+      background: rgba(15, 23, 42, 0.95); padding: 6px 14px; border-radius: 10px; margin-bottom: 6px; border: 1px solid #1e293b; flex-wrap: wrap; gap: 8px;
     }
-    .score-display { font-size: 20px; font-weight: 900; display: flex; align-items: center; gap: 12px; }
-    .timer-box { background: #0f172a; padding: 3px 10px; border-radius: 6px; color: #38bdf8; font-family: monospace; font-size: 18px; }
+    .score-display { font-size: 20px; font-weight: 900; display: flex; align-items: center; gap: 10px; }
+    .timer-box { background: #020617; padding: 3px 10px; border-radius: 6px; color: #38bdf8; font-family: monospace; font-size: 17px; border: 1px solid #1e293b; }
+    .quick-controls { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    input, select {
+      background: #1e293b; color: white; border: 1px solid #334155; padding: 5px 9px; border-radius: 6px; font-size: 12px; font-weight: 700;
+    }
+
     #canvas-container {
-      position: relative; width: 100%; max-width: 1100px; flex: 1; max-height: 620px;
-      border-radius: 12px; overflow: hidden; border: 2px solid #1e293b; box-shadow: 0 12px 35px rgba(0,0,0,0.7);
+      position: relative; width: 100%; max-width: 1140px; flex: 1; max-height: 620px;
+      border-radius: 14px; overflow: hidden; border: 2px solid #334155; box-shadow: 0 15px 40px rgba(0,0,0,0.85);
     }
-    canvas { width: 100%; height: 100%; display: block; background: #15803d; }
+    canvas { width: 100%; height: 100%; display: block; background: #14532d; }
 
-    /* 키 설명 바 */
     #key-guide {
-      width: 100%; max-width: 1100px; display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;
-      margin-top: 6px; font-size: 12px; color: #94a3b8; background: #111827; padding: 6px 12px; border-radius: 8px;
+      width: 100%; max-width: 1140px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+      margin-top: 6px; font-size: 12px; color: #cbd5e1; background: #0f172a; padding: 6px 12px; border-radius: 8px; border: 1px solid #1e293b;
     }
-    .key-cap { background: #334155; color: #f8fafc; padding: 2px 6px; border-radius: 4px; font-weight: 800; border-bottom: 2px solid #0f172a; }
+    .key-cap { background: #334155; color: #f8fafc; padding: 2px 6px; border-radius: 4px; font-weight: 900; border-bottom: 2px solid #020617; }
 
-    /* 2. 로비 & 방 입장 */
+    /* 공통 카드 & 버튼 */
     .panel-card {
-      width: 100%; max-width: 900px; background: #111827; border: 1px solid #1f2937;
+      width: 100%; max-width: 980px; background: #0f172a; border: 1px solid #1e293b;
       border-radius: 14px; padding: 20px; margin-bottom: 16px;
     }
-    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; width: 100%; max-width: 900px; }
-    input, select {
-      background: #1f2937; color: white; border: 1px solid #374151; padding: 8px 12px; border-radius: 8px; font-size: 14px;
-    }
     .btn-primary {
-      background: #2563eb; color: white; border: none; padding: 10px 18px; border-radius: 8px;
-      font-weight: 800; cursor: pointer; font-size: 14px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 9px 16px; border-radius: 8px;
+      font-weight: 800; cursor: pointer; font-size: 13px; transition: 0.15s;
     }
-    .btn-primary:hover { background: #1d4ed8; }
-    .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 900; cursor: pointer; }
-    .btn-danger { background: #dc2626; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.4); }
+    .btn-gold {
+      background: linear-gradient(135deg, #facc15, #d97706); color: #090d16; border: none; padding: 9px 16px; border-radius: 8px;
+      font-weight: 900; cursor: pointer; font-size: 13px; transition: 0.15s;
+    }
+    .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(250,204,21,0.45); }
+    .btn-danger { background: #dc2626; color: white; border: none; padding: 7px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px; }
 
-    /* 팀 카드 스타일 */
-    .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; width: 100%; }
+    /* 구단 & 이적시장 카드 */
+    .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 14px; width: 100%; }
     .team-card {
-      background: linear-gradient(145deg, #1e293b, #0f172a); border: 2px solid #334155;
-      border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; position: relative;
+      background: linear-gradient(160deg, #1e293b 0%, #090d16 100%); border: 2px solid #334155;
+      border-radius: 14px; padding: 15px; display: flex; flex-direction: column; gap: 8px; position: relative; transition: 0.2s;
     }
-    .team-card.equipped { border-color: #facc15; box-shadow: 0 0 15px rgba(250, 204, 21, 0.25); }
-    .grade-badge { font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 6px; width: fit-content; }
-    .grade-BRONZE { background: #78350f; color: #fde68a; }
+    .team-card:hover { transform: translateY(-3px); border-color: #60a5fa; }
+    .team-card.equipped { border-color: #facc15; box-shadow: 0 0 20px rgba(250, 204, 21, 0.25); }
+    .emblem-circle {
+      width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 13px; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .grade-badge { font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 6px; }
     .grade-SILVER { background: #475569; color: #f8fafc; }
     .grade-GOLD { background: #b45309; color: #fef08a; }
-    .grade-ICON { background: #6d28d9; color: #ede9fe; }
-    .ovr-num { font-size: 26px; font-weight: 900; color: #38bdf8; }
+    .grade-ICON { background: linear-gradient(90deg, #7c3aed, #db2777); color: #ffffff; }
+    .ovr-num { font-size: 28px; font-weight: 900; color: #38bdf8; }
+    .stat-bars { display: flex; gap: 6px; font-size: 11px; color: #94a3b8; background: rgba(0,0,0,0.35); padding: 6px 8px; border-radius: 8px; }
 
-    /* 팩 개봉 모달 */
-    #pack-modal {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100;
-      align-items: center; justify-content: center; flex-direction: column;
+    /* 도파민 모달 (강화 연출 & 가챠 워크아웃 연출) */
+    #fx-modal {
+      display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.9); z-index: 100;
+      align-items: center; justify-content: center; flex-direction: column; backdrop-filter: blur(6px);
     }
-    .pack-box {
-      width: 260px; height: 340px; border-radius: 18px; background: linear-gradient(135deg, #f59e0b, #7c3aed);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      box-shadow: 0 0 50px rgba(245, 158, 11, 0.6); animation: popIn 0.4s ease; text-align: center; padding: 20px;
+    .fx-card {
+      width: 300px; min-height: 360px; border-radius: 20px; background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 3px solid #facc15; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 24px; text-align: center; box-shadow: 0 0 60px rgba(250, 204, 21, 0.5);
     }
-    @keyframes popIn { 0% { transform: scale(0.4) rotate(-8deg); opacity: 0; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+    .shake-anim { animation: shake 0.12s infinite; }
+    @keyframes shake {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      25% { transform: translate(-5px, 3px) rotate(-1.5deg); }
+      50% { transform: translate(5px, -3px) rotate(1.5deg); }
+      75% { transform: translate(-4px, -2px) rotate(-1deg); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+    .boom-anim { animation: boom 0.45s cubic-bezier(0.17, 0.89, 0.32, 1.49); }
+    @keyframes boom {
+      0% { transform: scale(0.3); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .gauge-track { width: 100%; height: 14px; background: #090d16; border-radius: 99px; overflow: hidden; border: 1px solid #475569; margin: 16px 0; }
+    .gauge-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #facc15, #ef4444); transition: width 0.05s linear; }
 
     /* 모바일 터치 조작 */
     #mobile-controls {
-      display: none; position: fixed; bottom: 45px; left: 0; right: 0; padding: 0 20px;
+      display: none; position: fixed; bottom: 42px; left: 0; right: 0; padding: 0 18px;
       justify-content: space-between; pointer-events: none; z-index: 30;
     }
     @media (pointer: coarse) { #mobile-controls { display: flex; } }
-    #joy-zone { width: 110px; height: 110px; background: rgba(255,255,255,0.15); border-radius: 50%; position: relative; pointer-events: auto; touch-action: none; }
-    #joy-knob { width: 44px; height: 44px; background: rgba(255,255,255,0.7); border-radius: 50%; position: absolute; top: 33px; left: 33px; }
-    .touch-btns { display: flex; gap: 10px; pointer-events: auto; }
-    .t-btn { width: 58px; height: 58px; border-radius: 50%; border: none; font-weight: 900; color: white; font-size: 13px; touch-action: none; }
+    #joy-zone { width: 105px; height: 105px; background: rgba(255,255,255,0.15); border-radius: 50%; position: relative; pointer-events: auto; touch-action: none; }
+    #joy-knob { width: 42px; height: 42px; background: rgba(255,255,255,0.75); border-radius: 50%; position: absolute; top: 31px; left: 31px; }
+    .touch-btns { display: flex; gap: 8px; pointer-events: auto; }
+    .t-btn { width: 54px; height: 54px; border-radius: 50%; border: none; font-weight: 900; color: white; font-size: 12px; touch-action: none; }
   </style>
 </head>
 <body>
 
-  <!-- 상단 메뉴 바 -->
+  <!-- 상단 메뉴 바 (불필요한 '경기장 입장' 제거, 바로 경기장과 구단/가챠/시장 전환) -->
   <div id="navbar">
     <div class="brand">
-      ⚽ FC ONLINE ARENA
+      ⚽ FC 2.5D ARENA
       <span id="conn-badge">연결중...</span>
     </div>
     <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchTab('lobby')">로비 / 매칭</button>
-      <button class="tab-btn" onclick="switchTab('match')">경기장 입장</button>
-      <button class="tab-btn" onclick="switchTab('club')">내 구단 / 강화</button>
-      <button class="tab-btn" onclick="switchTab('packs')">팀 팩 상점</button>
-      <button class="tab-btn" onclick="switchTab('market')">이적시장 (사고팔기)</button>
+      <button class="tab-btn active" id="tab-match" onclick="switchTab('match')">⚽ 실시간 경기장</button>
+      <button class="tab-btn" id="tab-club" onclick="switchTab('club')">🔥 내 구단 / 강화</button>
+      <button class="tab-btn" id="tab-packs" onclick="switchTab('packs')">🎁 팀 팩 가챠</button>
+      <button class="tab-btn" id="tab-market" onclick="switchTab('market')">🏛️ 이적시장</button>
     </div>
     <div class="wallet-box">
-      <span>보유 코인: <span class="coin-txt" id="coin-display">1,500</span> C</span>
+      <span>💰 <span class="coin-txt" id="coin-display">1,500</span> C</span>
     </div>
   </div>
 
-  <!-- 1. 로비 / 매칭 화면 -->
-  <div id="view-lobby" class="view-section active">
-    <div class="panel-card">
-      <h2 style="margin-top:0;">🏟️ 경기 설정 및 방 입장</h2>
-      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-        <div>
-          <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">구단주 닉네임</div>
-          <input type="text" id="nick-input" placeholder="닉네임 입력" maxlength="10">
-        </div>
-        <div>
-          <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">방 코드 (친구와 같은 코드 입력)</div>
-          <input type="text" id="room-input" value="public_1" maxlength="15">
-        </div>
-        <div>
-          <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">진영 선택</div>
-          <select id="side-select">
-            <option value="red">레드팀 (왼쪽 진영)</option>
-            <option value="blue">블루팀 (오른쪽 진영)</option>
-          </select>
-        </div>
-        <div style="align-self:flex-end;">
-          <button class="btn-primary" onclick="enterMatch()">⚽ 경기 시작하기</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid-2">
-      <div class="panel-card">
-        <h3 style="margin-top:0; color:#facc15;">🏆 현재 출전 중인 내 대표 팀</h3>
-        <div id="lobby-active-team"></div>
-      </div>
-      <div class="panel-card">
-        <h3 style="margin-top:0; color:#38bdf8;">🎮 FIFA 조작 키 가이드</h3>
-        <ul style="line-height:1.9; font-size:14px; padding-left:18px; margin:0;">
-          <li><span class="key-cap">방향키</span> 또는 <span class="key-cap">W A S D</span> : 선수 이동</li>
-          <li><span class="key-cap">Q</span> : <b>선수 전환</b> (공과 가장 가까운 우리 팀 선수로 변경)</li>
-          <li><span class="key-cap">Space</span> 또는 <span class="key-cap">D</span> : <b>파워 슛</b> (길게 누르면 게이지 충전)</li>
-          <li><span class="key-cap">S</span> : <b>짧은 패스</b> (앞쪽 아군에게 자동 연결)</li>
-          <li><span class="key-cap">W</span> (공격 시) / <span class="key-cap">E</span> : <b>스루 패스</b> (아군 앞 공간 패스)</li>
-          <li><span class="key-cap">Shift</span> : <b>전력 질주</b> (스태미나 소모)</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <!-- 2. 인게임 경기장 화면 -->
-  <div id="view-match" class="view-section">
-    <div id="hud-bar">
+  <!-- 1. 실시간 2.5D 경기장 화면 (접속 즉시 플레이 가능) -->
+  <div id="view-match" class="view-section active">
+    <div id="quick-bar">
       <div class="score-display">
         <span style="color:#ef4444;">RED <span id="hud-red">0</span></span>
-        <span class="timer-box" id="hud-timer">03:00</span>
+        <span class="timer-box" id="hud-timer">02:30</span>
         <span style="color:#3b82f6;"><span id="hud-blue">0</span> BLUE</span>
       </div>
-      <div style="font-size:13px; color:#cbd5e1;">
-        조종 선수: <b id="hud-player" style="color:#facc15;">-</b> | 방: <b id="hud-room">public_1</b>
-      </div>
-      <div style="display:flex; gap:8px;">
-        <button class="tab-btn" onclick="sendAction({type:'switchPlayer'})">선수 전환 (Q)</button>
-        <button class="tab-btn" onclick="sendAction({type:'restartMatch'})">재경기</button>
+
+      <div class="quick-controls">
+        <span>조종: <b id="hud-player" style="color:#facc15;">-</b></span>
+        <span>|</span>
+        <input type="text" id="nick-input" placeholder="닉네임" maxlength="10" style="width:80px;">
+        <input type="text" id="room-input" value="quick_1" placeholder="방코드" maxlength="12" style="width:75px;">
+        <select id="side-select">
+          <option value="red">레드팀</option>
+          <option value="blue">블루팀</option>
+        </select>
+        <button class="btn-primary" style="padding:5px 10px; font-size:12px;" onclick="applyMatchSetup()">방 적용</button>
+        <button class="tab-btn" style="padding:5px 9px; font-size:12px;" onclick="sendAction({type:'switchPlayer'})">선수전환(Q)</button>
+        <button class="tab-btn" style="padding:5px 9px; font-size:12px;" onclick="sendAction({type:'restartMatch'})">재경기</button>
       </div>
     </div>
 
     <div id="canvas-container">
-      <canvas id="gameCanvas" width="1100" height="620"></canvas>
+      <canvas id="gameCanvas" width="1140" height="620"></canvas>
     </div>
 
     <div id="key-guide">
-      <span><span class="key-cap">방향키</span> 이동</span>
+      <span><span class="key-cap">방향키</span> 드리블 이동</span>
       <span><span class="key-cap">Q</span> 선수 전환</span>
-      <span><span class="key-cap">Space / D</span> 슛(차징)</span>
-      <span><span class="key-cap">S</span> 패스</span>
-      <span><span class="key-cap">E</span> 스루패스</span>
-      <span><span class="key-cap">Shift</span> 전력질주</span>
-      <span>💡 경기 종료 시 승리 <b>+500 C</b> / 무승부 <b>+250 C</b> 지급!</span>
+      <span><span class="key-cap">Z</span> 개인기 치달</span>
+      <span><span class="key-cap">Space / D</span> 파워 슛</span>
+      <span><span class="key-cap">S</span> 짧은 패스</span>
+      <span><span class="key-cap">E</span> 스루 패스</span>
+      <span><span class="key-cap">Shift</span> 전력 질주</span>
     </div>
 
     <div id="mobile-controls">
       <div id="joy-zone"><div id="joy-knob"></div></div>
       <div class="touch-btns">
+        <button class="t-btn" style="background:#8b5cf6;" id="t-skill">Z개인기</button>
         <button class="t-btn" style="background:#6366f1;" id="t-switch">Q전환</button>
         <button class="t-btn" style="background:#10b981;" id="t-pass">S패스</button>
-        <button class="t-btn" style="background:#3b82f6;" id="t-sprint">대시</button>
         <button class="t-btn" style="background:#ef4444;" id="t-shoot">D슛</button>
       </div>
     </div>
   </div>
 
-  <!-- 3. 내 구단 & 팀 강화 화면 -->
+  <!-- 2. 내 구단 & 도파민 팀 강화 -->
   <div id="view-club" class="view-section">
     <div class="panel-card">
-      <h2 style="margin-top:0;">🛡️ 보유 팀 목록 및 팀 강화 (+1 ~ +10)</h2>
-      <p style="color:#94a3b8; font-size:13px;">팀을 강화하면 해당 팀 소속 선수 4명 전원의 스피드와 슛 파워가 영구 상승합니다.</p>
+      <h2 style="margin-top:0;">🔥 내 구단 스쿼드 & 팀 강화 (+1 ~ +10)</h2>
+      <p style="color:#94a3b8; font-size:13px;">강화 성공 시 구단 전체 OVR(+3)과 드리블·슛 파워가 폭등하며 황금 오라가 부여됩니다!</p>
       <div class="team-grid" id="my-teams-grid"></div>
     </div>
   </div>
 
-  <!-- 4. 팀 팩 상점 (상자 개봉) -->
+  <!-- 3. 팀 팩 가챠 (워크아웃 상자 개봉) -->
   <div id="view-packs" class="view-section">
     <div class="panel-card">
-      <h2 style="margin-top:0;">🎁 팀 팩 상점 (상자 개봉)</h2>
-      <p style="color:#94a3b8; font-size:13px;">AI 대전이나 온라인 경기로 얻은 코인으로 팀 팩을 열어 새로운 구단 스쿼드를 획득하세요!</p>
-      <div class="grid-2">
+      <h2 style="margin-top:0;">🎁 팀 팩 가챠 (워크아웃 상자 개봉)</h2>
+      <p style="color:#94a3b8; font-size:13px;">경기 보상으로 모은 코인으로 팀 팩을 열어 최고 등급 ICON 구단(레알 마드리드, 맨시티)을 노려보세요!</p>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
         <div class="team-card">
-          <span class="grade-badge grade-SILVER">SILVER ~ GOLD</span>
-          <h3 style="margin:4px 0;">스탠다드 팀 팩</h3>
-          <p style="font-size:13px; color:#cbd5e1; margin:0;">대한민국, 토트넘, PSG, 아스날 등 실버~골드 팀 1개 획득</p>
-          <button class="btn-primary" style="margin-top:10px;" onclick="openPack('standard', 600)">600 C 로 상자 열기</button>
+          <span class="grade-badge grade-SILVER" style="width:fit-content;">SILVER ~ GOLD</span>
+          <h3 style="margin:4px 0;">스탠다드 구단 팩</h3>
+          <p style="font-size:13px; color:#cbd5e1; margin:0;">대한민국, 토트넘, PSG, 아스날 등 실버~골드 구단 1개 획득</p>
+          <button class="btn-primary" style="margin-top:12px;" onclick="openPack('standard', 600)">600 C 로 상자 열기</button>
         </div>
         <div class="team-card" style="border-color:#a855f7;">
-          <span class="grade-badge grade-ICON">GOLD ~ ICON</span>
-          <h3 style="margin:4px 0;">프리미엄 아이콘 팀 팩</h3>
-          <p style="font-size:13px; color:#cbd5e1; margin:0;">레알 마드리드, 맨시티, 바르셀로나 등 최상위 구단 높은 확률</p>
-          <button class="btn-gold" style="margin-top:10px;" onclick="openPack('premium', 1800)">1,800 C 로 상자 열기</button>
+          <span class="grade-badge grade-ICON" style="width:fit-content;">GOLD ~ ICON 워크아웃</span>
+          <h3 style="margin:4px 0;">프리미엄 아이콘 구단 팩</h3>
+          <p style="font-size:13px; color:#cbd5e1; margin:0;">레알 마드리드(91), 맨시티(90), 바르셀로나(86) 등 최상위 구단 등장!</p>
+          <button class="btn-gold" style="margin-top:12px;" onclick="openPack('premium', 1800)">1,800 C 로 상자 열기</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 5. 이적시장 (팀 단위 사고팔기) -->
+  <!-- 4. 이적시장 (즉시 영입 & 방출) -->
   <div id="view-market" class="view-section">
     <div class="panel-card">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div>
-          <h2 style="margin:0;">🏛️ 이적시장 (팀 단위 거래소)</h2>
-          <p style="color:#94a3b8; font-size:13px; margin:4px 0 0 0;">보유한 팀을 판매 등록하거나 다른 구단주의 강화된 팀을 구매할 수 있습니다.</p>
+          <h2 style="margin:0;">🏛️ 실시간 이적시장 (구단 영입 & 방출)</h2>
+          <p style="color:#94a3b8; font-size:13px; margin:4px 0 0 0;">다른 유저나 스카우터가 등록한 강화 구단을 즉시 영입하고 내 구단을 판매해 수익을 올리세요.</p>
         </div>
         <button class="btn-primary" onclick="loadMarket()">🔄 매물 새로고침</button>
       </div>
-      <hr style="border-color:#1f2937; margin:16px 0;">
+      <hr style="border-color:#1e293b; margin:16px 0;">
       <div class="team-grid" id="market-grid"></div>
     </div>
   </div>
 
-  <!-- 팀 팩 개봉 결과 모달 -->
-  <div id="pack-modal" onclick="this.style.display='none'">
-    <div class="pack-box" id="pack-result-box"></div>
-    <p style="color:#cbd5e1; margin-top:14px; font-size:13px;">화면을 클릭하면 닫힙니다</p>
+  <!-- 도파민 연출 모달 (강화 게이지 & 가챠 워크아웃) -->
+  <div id="fx-modal">
+    <div class="fx-card" id="fx-card-box"></div>
+    <button class="btn-primary" id="fx-close-btn" style="margin-top:16px; display:none;" onclick="closeFxModal()">확인</button>
   </div>
 
   <script>
-    // 로컬 구단 데이터 (브라우저 자동 저장)
     const DEFAULT_TEAM = {
       uid: 't_init_1', code: 'KOR', name: '대한민국 국대', grade: 'SILVER',
-      baseStat: 74, level: 1, color1: '#dc2626', color2: '#1d4ed8',
-      roster: ['손흥민', '이강인', '김민재', '조현우']
+      baseStat: 76, level: 1, color1: '#dc2626', color2: '#1d4ed8',
+      roster: ['손흥민', '이강인', '김민재', '조현우'], numbers: [7, 18, 4, 21]
     };
 
-    let clubData = JSON.parse(localStorage.getItem('fc_arena_club') || 'null') || {
+    let clubData = JSON.parse(localStorage.getItem('fc_arena_club_v2') || 'null') || {
       coins: 1500,
-      nickname: '구단주_' + Math.floor(Math.random() * 900 + 100),
+      nickname: '감독_' + Math.floor(Math.random() * 900 + 100),
       equippedUid: 't_init_1',
       teams: [DEFAULT_TEAM]
     };
 
     function saveClub() {
-      localStorage.setItem('fc_arena_club', JSON.stringify(clubData));
+      localStorage.setItem('fc_arena_club_v2', JSON.stringify(clubData));
       document.getElementById('coin-display').textContent = clubData.coins.toLocaleString();
       renderClubUI();
     }
@@ -293,53 +277,51 @@
 
     document.getElementById('nick-input').value = clubData.nickname;
     document.getElementById('nick-input').addEventListener('change', (e) => {
-      clubData.nickname = e.target.value || '구단주';
+      clubData.nickname = e.target.value || '감독';
       saveClub();
     });
 
-    // 탭 전환
     function switchTab(tabName) {
       document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
       document.getElementById('view-' + tabName).classList.add('active');
+      const tabBtn = document.getElementById('tab-' + tabName);
+      if (tabBtn) tabBtn.classList.add('active');
       if (tabName === 'market') loadMarket();
-      if (tabName === 'club' || tabName === 'lobby') renderClubUI();
+      if (tabName === 'club') renderClubUI();
     }
 
-    // 구단 UI 렌더링
     function renderClubUI() {
       const eq = getEquippedTeam();
-      const ovr = eq.baseStat + (eq.level - 1) * 3;
-      document.getElementById('lobby-active-team').innerHTML = `
-        <div class="team-card equipped">
-          <div style="display:flex; justify-content:space-between;">
-            <span class="grade-badge grade-${eq.grade}">${eq.grade}</span>
-            <span style="color:#facc15; font-weight:900;">+${eq.level}강</span>
-          </div>
-          <div style="font-size:18px; font-weight:900;">${eq.name} <span class="ovr-num">${ovr}</span></div>
-          <div style="font-size:12px; color:#94a3b8;">선발: ${eq.roster.join(' · ')}</div>
-        </div>
-      `;
-
       const grid = document.getElementById('my-teams-grid');
+      if (!grid) return;
       grid.innerHTML = clubData.teams.map(t => {
         const isEq = t.uid === eq.uid;
         const tOvr = t.baseStat + (t.level - 1) * 3;
         const upgCost = t.level * 400;
-        const sellPrice = Math.floor((t.baseStat * 15) + (t.level * 500));
+        const sellPrice = Math.floor((t.baseStat * 16) + (t.level * 550));
         return `
           <div class="team-card ${isEq ? 'equipped' : ''}">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span class="grade-badge grade-${t.grade}">${t.grade}</span>
-              <span style="color:#facc15; font-weight:900;">+${t.level}강</span>
+              <div class="emblem-circle" style="background:${t.color1}; color:${t.color2 === t.color1 ? '#fff' : t.color2};">${t.code}</div>
+              <div style="text-align:right;">
+                <span class="grade-badge grade-${t.grade}">${t.grade}</span>
+                <div style="color:#facc15; font-weight:900; font-size:15px; margin-top:2px;">+${t.level}강</div>
+              </div>
             </div>
-            <div style="font-size:17px; font-weight:900;">${t.name} <span class="ovr-num">${tOvr}</span></div>
-            <div style="font-size:12px; color:#94a3b8;">${t.roster.join(', ')}</div>
-            <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
-              <button class="btn-primary" style="flex:1; padding:6px;" onclick="equipTeam('${t.uid}')">${isEq ? '출전중' : '대표팀 설정'}</button>
-              <button class="btn-gold" style="flex:1; padding:6px;" onclick="upgradeTeam('${t.uid}')">강화 (${upgCost}C)</button>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="font-size:17px; font-weight:900;">${t.name}</span>
+              <span class="ovr-num">${tOvr}</span>
             </div>
-            ${clubData.teams.length > 1 ? `<button class="btn-danger" style="margin-top:4px; font-size:12px;" onclick="sellTeamToMarket('${t.uid}', ${sellPrice})">이적시장 판매 (${sellPrice}C)</button>` : ''}
+            <div class="stat-bars">
+              <span>속도 <b>${tOvr + 2}</b></span> · <span>드리블 <b>${tOvr + 1}</b></span> · <span>슛 <b>${tOvr}</b></span>
+            </div>
+            <div style="font-size:12px; color:#94a3b8;">선발: ${t.roster.join(', ')}</div>
+            <div style="display:flex; gap:6px; margin-top:6px;">
+              <button class="btn-primary" style="flex:1; padding:7px;" onclick="equipTeam('${t.uid}')">${isEq ? '✅ 출전중' : '대표팀 설정'}</button>
+              <button class="btn-gold" style="flex:1; padding:7px;" onclick="upgradeTeam('${t.uid}')">⚡ 강화 (${upgCost}C)</button>
+            </div>
+            ${clubData.teams.length > 1 ? `<button class="btn-danger" style="margin-top:2px;" onclick="sellTeamToMarket('${t.uid}', ${sellPrice})">🏛️ 이적시장 판매 (+${sellPrice}C)</button>` : ''}
           </div>
         `;
       }).join('');
@@ -351,6 +333,7 @@
       sendAction({ type: 'syncTeam', activeTeam: getEquippedTeam(), nickname: clubData.nickname });
     }
 
+    // 🔥 도파민 강화 연출 (흔들림 + 차징 게이지 + 폭발 결과)
     function upgradeTeam(uid) {
       const t = clubData.teams.find(x => x.uid === uid);
       if (!t) return;
@@ -358,45 +341,126 @@
       const cost = t.level * 400;
       if (clubData.coins < cost) return alert('코인이 부족합니다! 경기에서 승리해 코인을 모으세요.');
       clubData.coins -= cost;
-
-      // 강화 성공 확률 (레벨이 높을수록 조금씩 감소, 실패 시 레벨 유지)
-      const successRate = Math.max(0.35, 1 - (t.level - 1) * 0.08);
-      if (Math.random() <= successRate) {
-        t.level++;
-        alert(`🎉 강화 성공! [${t.name}] +${t.level}강 달성! (능력치 +3 상승)`);
-      } else {
-        alert(`💥 강화 실패! 코인만 소모되고 강화 단계(+${t.level})는 유지되었습니다.`);
-      }
       saveClub();
+
+      const modal = document.getElementById('fx-modal');
+      const box = document.getElementById('fx-card-box');
+      const closeBtn = document.getElementById('fx-close-btn');
+      closeBtn.style.display = 'none';
+      modal.style.display = 'flex';
+
+      box.className = 'fx-card shake-anim';
+      box.style.borderColor = '#38bdf8';
+      box.innerHTML = `
+        <div class="emblem-circle" style="width:64px; height:64px; font-size:18px; background:${t.color1}; color:${t.color2};">${t.code}</div>
+        <h2 style="margin:12px 0 4px 0;">${t.name}</h2>
+        <div style="font-size:20px; font-weight:900; color:#facc15;">+${t.level}강 ➔ +${t.level + 1}강 도전중...</div>
+        <div class="gauge-track"><div class="gauge-fill" id="upg-bar"></div></div>
+        <p style="font-size:12px; color:#94a3b8;">강화 에너지를 주입하고 있습니다!</p>
+      `;
+
+      let prog = 0;
+      const timer = setInterval(() => {
+        prog += 5;
+        const bar = document.getElementById('upg-bar');
+        if (bar) bar.style.width = prog + '%';
+
+        if (prog >= 100) {
+          clearInterval(timer);
+          const successRate = Math.max(0.38, 1 - (t.level - 1) * 0.07);
+          const isSuccess = Math.random() <= successRate;
+          box.className = 'fx-card boom-anim';
+
+          if (isSuccess) {
+            t.level++;
+            const newOvr = t.baseStat + (t.level - 1) * 3;
+            box.style.borderColor = '#facc15';
+            box.style.boxShadow = '0 0 80px rgba(250, 204, 21, 0.9)';
+            box.innerHTML = `
+              <div style="font-size:15px; font-weight:900; color:#facc15; letter-spacing:2px;">✨ ENHANCEMENT SUCCESS ✨</div>
+              <div style="font-size:52px; font-weight:900; color:#facc15; margin:8px 0;">+${t.level}강</div>
+              <h2 style="margin:4px 0;">${t.name}</h2>
+              <div style="font-size:18px; font-weight:800; color:#38bdf8;">팀 OVR ${newOvr - 3} ➔ ${newOvr} (+3)</div>
+            `;
+            if (clubData.equippedUid === t.uid) {
+              sendAction({ type: 'syncTeam', activeTeam: t, nickname: clubData.nickname });
+            }
+          } else {
+            box.style.borderColor = '#ef4444';
+            box.style.boxShadow = '0 0 60px rgba(239, 68, 68, 0.7)';
+            box.innerHTML = `
+              <div style="font-size:15px; font-weight:900; color:#ef4444;">💥 강화 실패</div>
+              <div style="font-size:44px; font-weight:900; color:#94a3b8; margin:12px 0;">+${t.level}강 유지</div>
+              <p style="font-size:13px; color:#cbd5e1;">아쉽지만 단계는 하락하지 않았습니다.</p>
+            `;
+          }
+          saveClub();
+          closeBtn.style.display = 'block';
+        }
+      }, 65);
     }
 
-    // 팀 팩 뽑기
+    // 🎁 가챠 워크아웃 연출
     async function openPack(packType, cost) {
       if (clubData.coins < cost) return alert('코인이 부족합니다!');
       const res = await fetch('/api/market');
       const { catalog } = await res.json();
       clubData.coins -= cost;
-
-      const pool = packType === 'premium'
-        ? catalog.filter(c => c.grade === 'GOLD' || c.grade === 'ICON')
-        : catalog.filter(c => c.grade === 'SILVER' || c.grade === 'GOLD');
-
-      const picked = pool[Math.floor(Math.random() * pool.length)];
-      const newCard = { ...picked, uid: 't_' + Date.now(), level: 1 };
-      clubData.teams.push(newCard);
       saveClub();
 
-      const modal = document.getElementById('pack-modal');
-      document.getElementById('pack-result-box').innerHTML = `
-        <span class="grade-badge grade-${newCard.grade}" style="font-size:14px;">${newCard.grade}</span>
-        <div style="font-size:48px; font-weight:900; margin:10px 0;">${newCard.baseStat}</div>
-        <h2 style="margin:4px 0;">${newCard.name}</h2>
-        <p style="font-size:13px; color:#f1f5f9;">${newCard.roster.join(' · ')}</p>
-      `;
+      const modal = document.getElementById('fx-modal');
+      const box = document.getElementById('fx-card-box');
+      const closeBtn = document.getElementById('fx-close-btn');
+      closeBtn.style.display = 'none';
       modal.style.display = 'flex';
+
+      box.className = 'fx-card shake-anim';
+      box.style.borderColor = '#a855f7';
+      box.innerHTML = `
+        <div style="font-size:54px;">🎁</div>
+        <h2 style="margin:12px 0;">구단 팩 개봉중...</h2>
+        <div class="gauge-track"><div class="gauge-fill" id="pack-bar"></div></div>
+        <p style="font-size:12px; color:#cbd5e1;">스카우터가 최고급 구단을 탐색중입니다!</p>
+      `;
+
+      let prog = 0;
+      const timer = setInterval(() => {
+        prog += 6;
+        const bar = document.getElementById('pack-bar');
+        if (bar) bar.style.width = prog + '%';
+
+        if (prog >= 100) {
+          clearInterval(timer);
+          const pool = packType === 'premium'
+            ? catalog.filter(c => c.grade === 'GOLD' || c.grade === 'ICON')
+            : catalog.filter(c => c.grade === 'SILVER' || c.grade === 'GOLD');
+
+          const picked = pool[Math.floor(Math.random() * pool.length)];
+          const newCard = { ...picked, uid: 't_' + Date.now(), level: 1 };
+          clubData.teams.push(newCard);
+          saveClub();
+
+          box.className = 'fx-card boom-anim';
+          const isIcon = newCard.grade === 'ICON';
+          box.style.borderColor = isIcon ? '#e879f9' : '#facc15';
+          box.style.boxShadow = isIcon ? '0 0 90px rgba(232, 121, 249, 0.9)' : '0 0 70px rgba(250, 204, 21, 0.8)';
+          box.innerHTML = `
+            <span class="grade-badge grade-${newCard.grade}" style="font-size:14px;">${isIcon ? '🌟 WALKOUT ICON 🌟' : newCard.grade}</span>
+            <div class="emblem-circle" style="width:68px; height:68px; font-size:20px; margin-top:12px; background:${newCard.color1}; color:${newCard.color2};">${newCard.code}</div>
+            <div style="font-size:46px; font-weight:900; color:#38bdf8; margin:6px 0;">OVR ${newCard.baseStat}</div>
+            <h2 style="margin:2px 0;">${newCard.name}</h2>
+            <p style="font-size:13px; color:#e2e8f0;">${newCard.roster.join(' · ')}</p>
+          `;
+          closeBtn.style.display = 'block';
+        }
+      }, 65);
     }
 
-    // 이적시장 사고팔기
+    function closeFxModal() {
+      document.getElementById('fx-modal').style.display = 'none';
+    }
+
+    // 🏛️ 이적시장 사고팔기
     async function loadMarket() {
       const res = await fetch('/api/market');
       const { market } = await res.json();
@@ -406,15 +470,21 @@
         const ovr = t.baseStat + (t.level - 1) * 3;
         return `
           <div class="team-card">
-            <div style="display:flex; justify-content:space-between;">
-              <span class="grade-badge grade-${t.grade}">${t.grade}</span>
-              <span style="color:#facc15; font-weight:900;">+${t.level}강</span>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div class="emblem-circle" style="background:${t.color1}; color:${t.color2};">${t.code}</div>
+              <div style="text-align:right;">
+                <span class="grade-badge grade-${t.grade}">${t.grade}</span>
+                <div style="color:#facc15; font-weight:900; font-size:15px;">+${t.level}강</div>
+              </div>
             </div>
-            <div style="font-size:17px; font-weight:900;">${t.name} <span class="ovr-num">${ovr}</span></div>
-            <div style="font-size:12px; color:#94a3b8;">판매자: ${m.seller}</div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="font-size:17px; font-weight:900;">${t.name}</span>
+              <span class="ovr-num">${ovr}</span>
+            </div>
+            <div style="font-size:12px; color:#94a3b8;">등록 구단주: <b>${m.seller}</b></div>
             <div style="font-size:12px; color:#cbd5e1;">${t.roster.join(', ')}</div>
             <button class="btn-gold" style="margin-top:8px;" onclick="buyFromMarket('${m.marketId}', ${m.price})">
-              ${m.price.toLocaleString()} C 구매하기
+              🤝 ${m.price.toLocaleString()} C 즉시 영입
             </button>
           </div>
         `;
@@ -422,7 +492,7 @@
     }
 
     async function sellTeamToMarket(uid, price) {
-      if (clubData.teams.length <= 1) return alert('최소 1개의 팀은 보유해야 합니다.');
+      if (clubData.teams.length <= 1) return alert('최소 1개의 구단은 보유해야 합니다.');
       const idx = clubData.teams.findIndex(t => t.uid === uid);
       if (idx === -1) return;
       const [soldTeam] = clubData.teams.splice(idx, 1);
@@ -435,7 +505,19 @@
       });
       clubData.coins += price;
       saveClub();
-      alert(`[${soldTeam.name}] 팀을 이적시장에 판매하여 ${price} C를 획득했습니다!`);
+
+      const modal = document.getElementById('fx-modal');
+      const box = document.getElementById('fx-card-box');
+      document.getElementById('fx-close-btn').style.display = 'block';
+      modal.style.display = 'flex';
+      box.className = 'fx-card boom-anim';
+      box.style.borderColor = '#22c55e';
+      box.innerHTML = `
+        <div style="font-size:48px;">💰</div>
+        <h2>이적료 정산 완료!</h2>
+        <p style="color:#cbd5e1;"><b>[${soldTeam.name} +${soldTeam.level}강]</b> 매각</p>
+        <div style="font-size:32px; font-weight:900; color:#facc15;">+${price.toLocaleString()} C</div>
+      `;
     }
 
     async function buyFromMarket(marketId, price) {
@@ -445,26 +527,38 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ marketId })
       });
-      if (!res.ok) return alert('이미 다른 유저가 구매한 매물입니다.');
+      if (!res.ok) return alert('이미 판매된 매물입니다.');
       const { item } = await res.json();
       clubData.coins -= price;
       clubData.teams.push({ ...item.team, uid: 't_' + Date.now() });
       saveClub();
       loadMarket();
-      alert(`🎉 [${item.team.name}] (+${item.team.level}강) 영입 완료!`);
+
+      const modal = document.getElementById('fx-modal');
+      const box = document.getElementById('fx-card-box');
+      document.getElementById('fx-close-btn').style.display = 'block';
+      modal.style.display = 'flex';
+      box.className = 'fx-card boom-anim';
+      box.style.borderColor = '#38bdf8';
+      box.innerHTML = `
+        <div style="font-size:48px;">✍️</div>
+        <h2>구단 영입 오피셜!</h2>
+        <div class="emblem-circle" style="width:60px; height:60px; margin:8px 0; background:${item.team.color1}; color:${item.team.color2};">${item.team.code}</div>
+        <h3 style="margin:4px 0;">${item.team.name} (+${item.team.level}강)</h3>
+        <p style="font-size:12px; color:#94a3b8;">[내 구단 / 강화] 탭에서 대표팀으로 설정할 수 있습니다.</p>
+      `;
     }
 
-    // ================= 실시간 멀티플레이어 & 학교 방화벽 우회 네트워크 =================
+    // ================= 실시간 네트워크 (접속 즉시 자동 매칭 입장) =================
     const userId = 'u_' + Math.random().toString(36).substring(2, 10);
-    let currentRoomId = 'public_1';
+    let currentRoomId = 'quick_1';
     let gameState = null;
     let rewardClaimedForMatch = false;
 
-    const input = { up: false, down: false, left: false, right: false, shoot: false, pass: false, through: false, sprint: false };
+    const input = { up: false, down: false, left: false, right: false, shoot: false, pass: false, through: false, sprint: false, skill: false };
     let ws = null;
     let wsReady = false;
     let outQueue = [];
-
     const badge = document.getElementById('conn-badge');
 
     function sendAction(obj) {
@@ -476,14 +570,26 @@
       }
     }
 
+    function applyMatchSetup() {
+      currentRoomId = document.getElementById('room-input').value.trim() || 'quick_1';
+      const side = document.getElementById('side-select').value;
+      sendAction({
+        type: 'join',
+        nickname: clubData.nickname,
+        teamSide: side,
+        activeTeam: getEquippedTeam()
+      });
+    }
+
     function connectNetwork() {
       const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
       try {
         ws = new WebSocket(`${proto}//${location.host}/game-stream`);
         ws.onopen = () => {
           wsReady = true;
-          badge.textContent = '온라인 연결됨 (WS)';
+          badge.textContent = '온라인 연결됨';
           badge.style.background = '#16a34a';
+          applyMatchSetup();
         };
         ws.onmessage = (e) => {
           const data = JSON.parse(e.data);
@@ -492,9 +598,9 @@
         ws.onclose = () => { wsReady = false; };
       } catch (e) {}
 
-      // 학교 Wi-Fi 방화벽에서 WS 차단 시 자동 HTTP 폴링 전환
       setTimeout(() => {
         if (!wsReady) {
+          applyMatchSetup();
           setInterval(async () => {
             if (wsReady) return;
             try {
@@ -506,37 +612,23 @@
               });
               if (res.ok) {
                 const state = await res.json();
-                badge.textContent = '온라인 연결됨 (방화벽우회)';
+                badge.textContent = '온라인 연결됨 (우회)';
                 badge.style.background = '#16a34a';
                 onReceiveState(state);
               }
             } catch (err) {
-              badge.textContent = '서버 연결 재시도중';
+              badge.textContent = '재연결중...';
               badge.style.background = '#dc2626';
             }
-          }, 55);
+          }, 50);
         }
-      }, 1500);
-    }
-
-    function enterMatch() {
-      currentRoomId = document.getElementById('room-input').value.trim() || 'public_1';
-      const side = document.getElementById('side-select').value;
-      rewardClaimedForMatch = false;
-      sendAction({
-        type: 'join',
-        nickname: clubData.nickname,
-        teamSide: side,
-        activeTeam: getEquippedTeam()
-      });
-      switchTab('match');
+      }, 1200);
     }
 
     function onReceiveState(state) {
       gameState = state;
       document.getElementById('hud-red').textContent = state.score.red;
       document.getElementById('hud-blue').textContent = state.score.blue;
-      document.getElementById('hud-room').textContent = state.id;
 
       const mins = String(Math.floor(state.timeLeft / 60)).padStart(2, '0');
       const secs = String(state.timeLeft % 60).padStart(2, '0');
@@ -544,16 +636,16 @@
 
       const me = state.users[userId];
       if (me) {
+        document.getElementById('side-select').value = me.teamSide;
         const myEntity = state.entities.find(e => e.controllerUserId === userId);
         if (myEntity) document.getElementById('hud-player').textContent = `${myEntity.name} (${myEntity.role})`;
       }
 
-      // 경기 종료 보상 지급
       if (state.matchEnded && !rewardClaimedForMatch && me) {
         rewardClaimedForMatch = true;
         const myScore = me.teamSide === 'red' ? state.score.red : state.score.blue;
         const oppScore = me.teamSide === 'red' ? state.score.blue : state.score.red;
-        const reward = myScore > oppScore ? 500 : (myScore === oppScore ? 250 : 120);
+        const reward = myScore > oppScore ? 600 : (myScore === oppScore ? 300 : 150);
         clubData.coins += reward;
         saveClub();
       } else if (!state.matchEnded) {
@@ -561,41 +653,35 @@
       }
     }
 
-    // 키보드 입력
     window.addEventListener('keydown', (e) => {
       if (document.activeElement.tagName === 'INPUT') return;
-      if (e.code === 'KeyQ') {
-        sendAction({ type: 'switchPlayer' });
-        return;
-      }
+      if (e.code === 'KeyQ') { sendAction({ type: 'switchPlayer' }); return; }
       if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = true;
-      if (e.code === 'ArrowDown' || e.code === 'KeyS') {
-        if (e.code === 'KeyS' && document.getElementById('view-match').classList.contains('active')) input.pass = true;
-        else input.down = true;
-      }
+      if (e.code === 'ArrowDown') input.down = true;
+      if (e.code === 'KeyS') input.pass = true;
       if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = true;
-      if (e.code === 'ArrowRight' || e.code === 'KeyD') {
-        if (e.code === 'KeyD' && document.getElementById('view-match').classList.contains('active')) input.shoot = true;
-        else input.right = true;
-      }
-      if (e.code === 'Space') input.shoot = true;
+      if (e.code === 'ArrowRight') input.right = true;
+      if (e.code === 'KeyD' || e.code === 'Space') input.shoot = true;
       if (e.code === 'KeyE') input.through = true;
+      if (e.code === 'KeyZ' || e.code === 'KeyC') input.skill = true;
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.sprint = true;
       sendAction({ type: 'input', input: { ...input } });
     });
 
     window.addEventListener('keyup', (e) => {
       if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = false;
-      if (e.code === 'ArrowDown' || e.code === 'KeyS') { input.down = false; input.pass = false; }
+      if (e.code === 'ArrowDown') input.down = false;
+      if (e.code === 'KeyS') input.pass = false;
       if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = false;
-      if (e.code === 'ArrowRight' || e.code === 'KeyD') { input.right = false; input.shoot = false; }
-      if (e.code === 'Space') input.shoot = false;
+      if (e.code === 'ArrowRight') input.right = false;
+      if (e.code === 'KeyD' || e.code === 'Space') input.shoot = false;
       if (e.code === 'KeyE') input.through = false;
+      if (e.code === 'KeyZ' || e.code === 'KeyC') input.skill = false;
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.sprint = false;
       sendAction({ type: 'input', input: { ...input } });
     });
 
-    // 모바일 터치 컨트롤
+    // 모바일 터치
     const jZone = document.getElementById('joy-zone');
     const jKnob = document.getElementById('joy-knob');
     jZone.addEventListener('touchmove', (e) => {
@@ -604,7 +690,7 @@
       const t = e.touches[0];
       const dx = t.clientX - (r.left + r.width / 2);
       const dy = t.clientY - (r.top + r.height / 2);
-      const dist = Math.min(32, Math.hypot(dx, dy));
+      const dist = Math.min(30, Math.hypot(dx, dy));
       const ang = Math.atan2(dy, dx);
       jKnob.style.transform = `translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist}px)`;
       input.right = dx > 12; input.left = dx < -12; input.down = dy > 12; input.up = dy < -12;
@@ -615,125 +701,199 @@
       input.up = input.down = input.left = input.right = false;
       sendAction({ type: 'input', input: { ...input } });
     });
+    document.getElementById('t-skill').addEventListener('touchstart', (e) => { e.preventDefault(); input.skill = true; sendAction({ type: 'input', input: { ...input } }); });
+    document.getElementById('t-skill').addEventListener('touchend', (e) => { e.preventDefault(); input.skill = false; sendAction({ type: 'input', input: { ...input } }); });
     document.getElementById('t-switch').addEventListener('touchstart', (e) => { e.preventDefault(); sendAction({ type: 'switchPlayer' }); });
     document.getElementById('t-pass').addEventListener('touchstart', (e) => { e.preventDefault(); input.pass = true; sendAction({ type: 'input', input: { ...input } }); });
     document.getElementById('t-pass').addEventListener('touchend', (e) => { e.preventDefault(); input.pass = false; sendAction({ type: 'input', input: { ...input } }); });
     document.getElementById('t-shoot').addEventListener('touchstart', (e) => { e.preventDefault(); input.shoot = true; sendAction({ type: 'input', input: { ...input } }); });
     document.getElementById('t-shoot').addEventListener('touchend', (e) => { e.preventDefault(); input.shoot = false; sendAction({ type: 'input', input: { ...input } }); });
-    document.getElementById('t-sprint').addEventListener('touchstart', (e) => { e.preventDefault(); input.sprint = true; sendAction({ type: 'input', input: { ...input } }); });
-    document.getElementById('t-sprint').addEventListener('touchend', (e) => { e.preventDefault(); input.sprint = false; sendAction({ type: 'input', input: { ...input } }); });
 
-    // ================= 대형 경기장 카메라 & 미니맵 렌더링 =================
+    // ================= 2.5D 탑뷰+쿼터뷰 혼합 경기장 & 디테일 선수 렌더링 =================
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const FW = 1800, FH = 1100, GH = 220;
     let camX = (FW - canvas.width) / 2;
     let camY = (FH - canvas.height) / 2;
 
+    function drawDetailedPlayer(e, isMine) {
+      ctx.save();
+      ctx.translate(e.x, e.y);
+
+      // 1. 바닥 입체 그림자 (2.5D 깊이감)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
+      ctx.beginPath();
+      ctx.ellipse(0, 14, 21, 11, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. 조종 선수 황금 발판 링 & 드리블 개인기 오라
+      if (isMine) {
+        ctx.strokeStyle = e.skillActive > 0 ? '#e879f9' : '#facc15';
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.ellipse(0, 14, 26, 14, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // 3. 진행 방향 시선 화살표
+      ctx.save();
+      ctx.rotate(e.facing);
+      ctx.fillStyle = isMine ? '#facc15' : 'rgba(255,255,255,0.55)';
+      ctx.beginPath();
+      ctx.moveTo(28, 0);
+      ctx.lineTo(19, -6);
+      ctx.lineTo(19, 6);
+      ctx.fill();
+      ctx.restore();
+
+      // 4. 선수 상체 유니폼 (2.5D 쿼터뷰 입체 몸통)
+      ctx.fillStyle = e.color1;
+      ctx.beginPath();
+      ctx.roundRect(-15, -14, 30, 26, 9);
+      ctx.fill();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = e.color2;
+      ctx.stroke();
+
+      // 유니폼 세로 포인트 라인 & 등번호
+      ctx.fillStyle = e.color2;
+      ctx.fillRect(-4, -13, 8, 24);
+      ctx.fillStyle = e.color1 === '#ffffff' || e.color1 === '#f8fafc' ? '#0f172a' : '#ffffff';
+      ctx.font = '900 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(e.number, 0, 6);
+
+      // 5. 선수 머리 (2.5D 입체 헤드 + 헤어스타일)
+      ctx.fillStyle = '#fed7aa'; // 피부톤
+      ctx.beginPath();
+      ctx.arc(0, -16, 10, 0, Math.PI * 2);
+      ctx.fill();
+      // 헤어스타일
+      ctx.fillStyle = e.role === 'GK' ? '#facc15' : '#1e293b';
+      ctx.beginPath();
+      ctx.arc(0, -18, 10, Math.PI, Math.PI * 2);
+      ctx.fill();
+
+      // 6. 조종 선수 머리 위 커서 삼각형
+      if (isMine) {
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.moveTo(0, -32);
+        ctx.lineTo(-7, -42);
+        ctx.lineTo(7, -42);
+        ctx.fill();
+      }
+
+      // 7. 슛/패스 차징 게이지
+      if (e.charge > 0) {
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(-22, -31, 44, 6);
+        ctx.fillStyle = e.chargeType === 'shoot' ? '#ef4444' : '#38bdf8';
+        ctx.fillRect(-22, -31, (e.charge / 100) * 44, 6);
+      }
+
+      // 8. 이름표 및 스태미나 바
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+      ctx.fillRect(-28, 22, 56, 15);
+      ctx.fillStyle = isMine ? '#facc15' : '#ffffff';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText(e.name, 0, 33);
+
+      if (isMine) {
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(-20, 38, (e.stamina / 100) * 40, 3);
+      }
+
+      ctx.restore();
+    }
+
     function renderLoop() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 카메라 추적 대상 (내 조종 선수 또는 공)
       let focusX = FW / 2, focusY = FH / 2;
       if (gameState) {
         const myEnt = gameState.entities.find(e => e.controllerUserId === userId);
         if (myEnt) {
-          focusX = myEnt.x * 0.7 + gameState.ball.x * 0.3;
-          focusY = myEnt.y * 0.7 + gameState.ball.y * 0.3;
+          focusX = myEnt.x * 0.72 + gameState.ball.x * 0.28;
+          focusY = myEnt.y * 0.72 + gameState.ball.y * 0.28;
         } else {
           focusX = gameState.ball.x;
           focusY = gameState.ball.y;
         }
       }
-      const targetCamX = Math.max(0, Math.min(FW - canvas.width, focusX - canvas.width / 2));
-      const targetCamY = Math.max(0, Math.min(FH - canvas.height, focusY - canvas.height / 2));
-      camX += (targetCamX - camX) * 0.12;
-      camY += (targetCamY - camY) * 0.12;
+      const targetCamX = Math.max(-60, Math.min(FW - canvas.width + 60, focusX - canvas.width / 2));
+      const targetCamY = Math.max(-60, Math.min(FH - canvas.height + 60, focusY - canvas.height / 2));
+      camX += (targetCamX - camX) * 0.14;
+      camY += (targetCamY - camY) * 0.14;
 
       ctx.save();
       ctx.translate(-camX, -camY);
 
-      // 잔디 줄무늬
-      for (let i = 0; i < 18; i++) {
-        ctx.fillStyle = i % 2 === 0 ? '#16a34a' : '#15803d';
-        ctx.fillRect(i * (FW / 18), 0, FW / 18, FH);
+      // 경기장 외곽 관중석 & 광고판 트랙 (2.5D 스타디움 디테일)
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(-100, -100, FW + 200, FH + 200);
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(-24, -24, FW + 48, FH + 48);
+
+      // 투톤 체크 패턴 천연 잔디
+      const tileW = 100, tileH = 100;
+      for (let gx = 0; gx < FW; gx += tileW) {
+        for (let gy = 0; gy < FH; gy += tileH) {
+          const isEven = ((gx / tileW) + (gy / tileH)) % 2 === 0;
+          ctx.fillStyle = isEven ? '#16a34a' : '#15803d';
+          ctx.fillRect(gx, gy, tileW, tileH);
+        }
       }
 
-      // 경기장 외곽선, 하프라인, 페널티 박스
-      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      // 경기장 라인 & 페널티 아크
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
       ctx.lineWidth = 4;
       ctx.strokeRect(4, 4, FW - 8, FH - 8);
       ctx.beginPath(); ctx.moveTo(FW / 2, 0); ctx.lineTo(FW / 2, FH); ctx.stroke();
-      ctx.beginPath(); ctx.arc(FW / 2, FH / 2, 120, 0, Math.PI * 2); ctx.stroke();
-
-      // 페널티 박스
+      ctx.beginPath(); ctx.arc(FW / 2, FH / 2, 125, 0, Math.PI * 2); ctx.stroke();
       ctx.strokeRect(4, (FH - 480) / 2, 240, 480);
       ctx.strokeRect(FW - 244, (FH - 480) / 2, 240, 480);
 
-      // 골대
+      // 2.5D 입체 골대 프레임 & 그물
       const gTop = (FH - GH) / 2;
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
-      ctx.fillRect(0, gTop, 22, GH);
-      ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
-      ctx.fillRect(FW - 22, gTop, 22, GH);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.fillRect(-32, gTop, 32, GH);
+      ctx.fillRect(FW, gTop, 32, GH);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(-32, gTop, 32, GH);
+      ctx.strokeRect(FW, gTop, 32, GH);
 
       if (gameState) {
-        // 선수 그리기
-        gameState.entities.forEach(e => {
-          const isMine = e.controllerUserId === userId;
-
-          // 내 조종 선수 발밑 삼각형 커서
-          if (isMine) {
-            ctx.fillStyle = '#facc15';
-            ctx.beginPath();
-            ctx.moveTo(e.x, e.y - 34);
-            ctx.lineTo(e.x - 8, e.y - 45);
-            ctx.lineTo(e.x + 8, e.y - 45);
-            ctx.fill();
-          }
-
-          ctx.beginPath();
-          ctx.arc(e.x, e.y, 19, 0, Math.PI * 2);
-          ctx.fillStyle = e.color1;
-          ctx.fill();
-          ctx.lineWidth = isMine ? 4 : 2.5;
-          ctx.strokeStyle = isMine ? '#facc15' : e.color2;
-          ctx.stroke();
-
-          // 포지션 약자 (GK, DF, MF, ST)
-          ctx.fillStyle = 'white';
-          ctx.font = 'bold 10px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(e.role, e.x, e.y + 4);
-
-          // 슛/패스 차징 게이지
-          if (e.charge > 0) {
-            ctx.fillStyle = '#111827';
-            ctx.fillRect(e.x - 22, e.y - 30, 44, 6);
-            ctx.fillStyle = e.chargeType === 'shoot' ? '#ef4444' : '#38bdf8';
-            ctx.fillRect(e.x - 22, e.y - 30, (e.charge / 100) * 44, 6);
-          }
-
-          // 이름 및 스태미나 바
-          ctx.fillStyle = 'white';
-          ctx.font = 'bold 12px sans-serif';
-          ctx.fillText(e.name, e.x, e.y + 33);
-
-          if (isMine) {
-            ctx.fillStyle = '#22c55e';
-            ctx.fillRect(e.x - 18, e.y + 37, (e.stamina / 100) * 36, 3);
-          }
+        // Y좌표 기준 깊이 정렬(Depth Sort) 후 선수 그리기 (2.5D 원근감)
+        const sortedEntities = [...gameState.entities].sort((a, b) => a.y - b.y);
+        sortedEntities.forEach(e => {
+          drawDetailedPlayer(e, e.controllerUserId === userId);
         });
 
-        // 축구공
+        // 축구공 (높이 z에 따른 그림자 분리 + 회전 무늬)
         const b = gameState.ball;
+        const bz = b.z || 0;
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
         ctx.beginPath();
-        ctx.arc(b.x, b.y, 11, 0, Math.PI * 2);
+        ctx.ellipse(b.x, b.y + 8, 10, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        const ballRadius = 11 + bz * 0.22;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y - bz, ballRadius, 0, Math.PI * 2);
         ctx.fillStyle = '#ffffff';
         ctx.fill();
         ctx.lineWidth = 2.5;
         ctx.strokeStyle = '#0f172a';
         ctx.stroke();
+
+        // 공 오각형 패턴 디테일
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(b.x - 2, b.y - bz - 2, 3.5, 0, Math.PI * 2);
+        ctx.fill();
       }
 
       ctx.restore();
@@ -741,9 +901,9 @@
       // 우측 하단 레이더 미니맵
       const mmW = 190, mmH = 116;
       const mmX = canvas.width - mmW - 14, mmY = canvas.height - mmH - 14;
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
+      ctx.fillStyle = 'rgba(9, 13, 22, 0.82)';
       ctx.fillRect(mmX, mmY, mmW, mmH);
-      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
       ctx.lineWidth = 1.5;
       ctx.strokeRect(mmX, mmY, mmW, mmH);
 
@@ -751,32 +911,31 @@
         gameState.entities.forEach(e => {
           ctx.fillStyle = e.controllerUserId === userId ? '#facc15' : (e.side === 'red' ? '#ef4444' : '#3b82f6');
           ctx.beginPath();
-          ctx.arc(mmX + (e.x / FW) * mmW, mmY + (e.y / FH) * mmH, e.controllerUserId === userId ? 4 : 3, 0, Math.PI * 2);
+          ctx.arc(mmX + (e.x / FW) * mmW, mmY + (e.y / FH) * mmH, e.controllerUserId === userId ? 4.5 : 3, 0, Math.PI * 2);
           ctx.fill();
         });
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(mmX + (gameState.ball.x / FW) * mmW, mmY + (gameState.ball.y / FH) * mmH, 3, 0, Math.PI * 2);
+        ctx.arc(mmX + (gameState.ball.x / FW) * mmW, mmY + (gameState.ball.y / FH) * mmH, 3.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // 골 / 경기 종료 배너
         if (gameState.goalCooldown > 0) {
-          ctx.fillStyle = 'rgba(0,0,0,0.6)';
+          ctx.fillStyle = 'rgba(0,0,0,0.65)';
           ctx.fillRect(0, canvas.height / 2 - 55, canvas.width, 110);
           ctx.fillStyle = '#facc15';
-          ctx.font = '900 54px sans-serif';
+          ctx.font = '900 58px sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText('GOAL!!', canvas.width / 2, canvas.height / 2 + 18);
+          ctx.fillText('GOAL!!', canvas.width / 2, canvas.height / 2 + 20);
         } else if (gameState.matchEnded) {
-          ctx.fillStyle = 'rgba(0,0,0,0.75)';
-          ctx.fillRect(0, canvas.height / 2 - 70, canvas.width, 140);
+          ctx.fillStyle = 'rgba(0,0,0,0.8)';
+          ctx.fillRect(0, canvas.height / 2 - 75, canvas.width, 150);
           ctx.fillStyle = '#38bdf8';
-          ctx.font = '900 42px sans-serif';
+          ctx.font = '900 44px sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText(`경기 종료! RED ${gameState.score.red} : ${gameState.score.blue} BLUE`, canvas.width / 2, canvas.height / 2 - 5);
+          ctx.fillText(`경기 종료! RED ${gameState.score.red} : ${gameState.score.blue} BLUE`, canvas.width / 2, canvas.height / 2 - 8);
           ctx.fillStyle = '#facc15';
           ctx.font = 'bold 20px sans-serif';
-          ctx.fillText('경기 보상 코인이 지급되었습니다! 상단 [재경기] 또는 구단 메뉴를 이용하세요.', canvas.width / 2, canvas.height / 2 + 35);
+          ctx.fillText('경기 보상 코인 지급 완료! 상단 [재경기] 또는 [팀 팩 가챠]를 이용해 보세요.', canvas.width / 2, canvas.height / 2 + 36);
         }
       }
 
